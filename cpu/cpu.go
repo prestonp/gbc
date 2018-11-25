@@ -47,6 +47,9 @@ func (c *CPU) Tick() {
 
 	switch op {
 	// 0X Range ///////////////////////////
+	case 0x01:
+		// LD BC, nn
+		c.ldWordWord(B, C, c.readWord())
 	case 0x02:
 		// LD (BC), A
 		c.ldAddrReg(toWord(c.R[B], c.R[C]), A)
@@ -61,6 +64,9 @@ func (c *CPU) Tick() {
 		c.ldRegByte(C, c.readByte())
 
 	// 1X Range ///////////////////////////
+	case 0x11:
+		// LD DE, nn
+		c.ldWordWord(D, E, c.readWord())
 	case 0x12:
 		// LD (DE), A
 		c.ldAddrReg(toWord(c.R[D], c.R[E]), A)
@@ -75,6 +81,9 @@ func (c *CPU) Tick() {
 		c.ldRegByte(E, c.readByte())
 
 	// 2X Range ///////////////////////////
+	case 0x21:
+		// LD HL, nn
+		c.ldWordWord(H, L, c.readWord())
 	case 0x22:
 		// LD (HLI), A
 		// LD (HL+), A
@@ -93,6 +102,9 @@ func (c *CPU) Tick() {
 		c.ldRegByte(L, c.readByte())
 
 	// 3X Range ///////////////////////////
+	case 0x31:
+		// LD SP, nn
+		c.ldSpWord(c.readWord())
 	case 0x32:
 		// LD (HLD), A
 		// LD (HL-), A
@@ -328,6 +340,9 @@ func (c *CPU) Tick() {
 	case 0xF2:
 		// LD A, (C)
 		c.ldRegAddr(A, toWord(0xFF, c.R[C]))
+	case 0xF9:
+		// LD SP, HL
+		c.ldSpWord(toWord(c.R[H], c.R[L]))
 	case 0xFA:
 		// LD A, (nn)
 		c.ldRegAddr(A, c.readWord())
@@ -352,11 +367,24 @@ func (c *CPU) ldRegAddr(dst Register, addr uint16) *CPU {
 	return c
 }
 
+// Load word variants
+func (c *CPU) ldWordWord(hi, lo Register, word uint16) *CPU {
+	c.R[hi] = uint8(word >> 8)
+	c.R[lo] = uint8(word & 0xFF)
+	return c
+}
+
 // Load address variants
 func (c *CPU) ldAddrReg(addr uint16, src Register) *CPU {
 	c.MMU.WriteByte(addr, c.R[src])
 	c.M++
 	c.T += 4
+	return c
+}
+
+// Load stack pointer variants
+func (c *CPU) ldSpWord(word uint16) *CPU {
+	c.SP = word
 	return c
 }
 
