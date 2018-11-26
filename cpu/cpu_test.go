@@ -267,14 +267,63 @@ func TestLD_nn_SP(t *testing.T) {
 	assertTiming(t, cpu, 5, 20)
 }
 
+func TestStack(t *testing.T) {
+	cpu := New()
+
+	// Test push
+	cpu.MMU.WriteByte(0x100, 0xF6)
+	cpu.R[A] = 0x12
+	cpu.R[F] = 0x34
+	cpu.SP = 0x5555
+
+	cpu.Tick()
+
+	if cpu.MMU.ReadByte(0x5555) != cpu.R[F] {
+		log.Printf("expected %x, got %x\n", cpu.R[F], cpu.MMU.ReadByte(0x5555))
+		t.Fail()
+	}
+
+	if cpu.MMU.ReadByte(0x5554) != cpu.R[A] {
+		log.Printf("expected %x, got %x\n", cpu.R[A], cpu.MMU.ReadByte(0x5554))
+		t.Fail()
+	}
+
+	assertTiming(t, cpu, 4, 16)
+
+	// Test pop
+	cpu.MMU.WriteByte(0x101, 0xF1)
+
+	// Replace AF with other values
+	cpu.R[A] = 0xFF
+	cpu.R[F] = 0xFF
+
+	// Reset timing for checking pop timing
+	cpu.M = 0
+	cpu.T = 0
+
+	cpu.Tick()
+
+	if cpu.R[A] != 0x12 {
+		log.Printf("expected %x, got %x\n", 0x12, cpu.R[A])
+		t.Fail()
+	}
+
+	if cpu.R[F] != 0x34 {
+		log.Printf("expected %x, got %x\n", 0x34, cpu.R[A])
+		t.Fail()
+	}
+
+	assertTiming(t, cpu, 3, 12)
+}
+
 func assertTiming(t *testing.T, cpu *CPU, mCycles, tCycles int) {
 	if cpu.M != mCycles {
-		log.Printf("expected %x, got %x\n", mCycles, cpu.M)
+		log.Printf("expected %d, got %d\n", mCycles, cpu.M)
 		t.Fail()
 	}
 
 	if cpu.T != tCycles {
-		log.Printf("expected %x, got %x\n", tCycles, cpu.T)
+		log.Printf("expected %d, got %d\n", tCycles, cpu.T)
 		t.Fail()
 	}
 }

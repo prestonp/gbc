@@ -325,6 +325,16 @@ func (c *CPU) Tick() {
 		// LD A, (HL)
 		c.ldRegAddr(A, toWord(c.R[H], c.R[L]))
 
+	// CX Range ///////////////////////////
+	case 0xC5:
+		// Push (BC)
+		c.push(B, C)
+
+	// DX Range ///////////////////////////
+	case 0xD5:
+		// Push (DE)
+		c.push(D, E)
+
 	// EX Range ///////////////////////////
 	case 0xE0:
 		// LDH (n), A
@@ -332,6 +342,9 @@ func (c *CPU) Tick() {
 	case 0xE2:
 		// LD (C), A
 		c.ldAddrReg(toWord(0xFF, c.R[C]), A)
+	case 0xE5:
+		// Push (HL)
+		c.push(H, L)
 	case 0xEA:
 		// LD (nn), A
 		c.ldAddrReg(c.readWord(), A)
@@ -340,9 +353,15 @@ func (c *CPU) Tick() {
 	case 0xF0:
 		// LDH A, (n)
 		c.ldRegAddr(A, toWord(0xFF, c.readByte()))
+	case 0xF1:
+		// Pop AF
+		c.pop(A, F)
 	case 0xF2:
 		// LD A, (C)
 		c.ldRegAddr(A, toWord(0xFF, c.R[C]))
+	case 0xF6:
+		// Push (AF)
+		c.push(A, F)
 	case 0xF9:
 		// LD SP, HL
 		// Added artifical internal delay: https://github.com/Gekkio/mooneye-gb/blob/master/docs/accuracy.markdown#some-instructions-take-more-cycles-than-just-the-memory-accesses-at-which-point-in-the-instruction-execution-do-these-extra-cycles-occur
@@ -464,6 +483,25 @@ func (c *CPU) incWord(upper, lower Register) *CPU {
 func (c *CPU) delay(m, t int) *CPU {
 	c.M += m
 	c.T += t
+	return c
+}
+
+// stack ops
+func (c *CPU) push(hi, lo Register) *CPU {
+	c.MMU.WriteByte(c.SP, c.R[lo])
+	c.MMU.WriteByte(c.SP-1, c.R[hi])
+
+	c.SP -= 2
+	c.delay(3, 12)
+	return c
+}
+
+func (c *CPU) pop(hi, lo Register) *CPU {
+	c.R[lo] = c.MMU.ReadByte(c.SP + 2)
+	c.R[hi] = c.MMU.ReadByte(c.SP + 1)
+
+	c.SP += 2
+	c.delay(2, 8)
 	return c
 }
 
