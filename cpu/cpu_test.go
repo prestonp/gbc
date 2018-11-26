@@ -216,9 +216,55 @@ func TestLD_SP_HL(t *testing.T) {
 		t.Fail()
 	}
 
-	// TODO: I don't understand why this would take 8 cycles
-	// since HL is part of CPU
-	// assertTiming(t, cpu, 2, 8)
+	assertTiming(t, cpu, 2, 8)
+}
+
+func TestLD_HL_SP_n(t *testing.T) {
+	cpu := New()
+	cpu.MMU.WriteByte(0x100, 0xF8)
+	cpu.MMU.WriteByte(0x101, 0x01)
+	cpu.SP = 0x1234
+
+	cpu.Tick()
+
+	if cpu.R[H] != 0x12 {
+		log.Printf("expected %x, got %x\n", 0x12, cpu.R[H])
+		t.Fail()
+	}
+
+	if cpu.R[L] != 0x35 {
+		log.Printf("expected %x, got %x\n", 0x35, cpu.R[L])
+		t.Fail()
+	}
+
+	if cpu.R[F] != 0x0 {
+		log.Printf("expected %x, got %x\n", 0x0, cpu.R[F])
+		t.Fail()
+	}
+
+	assertTiming(t, cpu, 3, 12)
+}
+
+func TestLD_nn_SP(t *testing.T) {
+	cpu := New()
+	cpu.MMU.WriteByte(0x100, 0x08)
+	cpu.MMU.WriteByte(0x101, 0x12)
+	cpu.MMU.WriteByte(0x102, 0x34)
+	cpu.SP = 0x1738
+
+	cpu.Tick()
+
+	if cpu.MMU.ReadByte(0x1234) != 0x38 {
+		log.Printf("expected %x, got %x\n", 0x38, cpu.MMU.ReadByte(0x1234))
+		t.Fail()
+	}
+
+	if cpu.MMU.ReadByte(0x1235) != 0x17 {
+		log.Printf("expected %x, got %x\n", 0x17, cpu.MMU.ReadByte(0x1235))
+		t.Fail()
+	}
+
+	assertTiming(t, cpu, 5, 20)
 }
 
 func assertTiming(t *testing.T, cpu *CPU, mCycles, tCycles int) {

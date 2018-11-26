@@ -56,6 +56,9 @@ func (c *CPU) Tick() {
 	case 0x06:
 		// LD B, n
 		c.ldRegByte(B, c.readByte())
+	case 0x08:
+		// LD (nn), SP
+		c.ldAddrWord(c.readWord(), c.SP)
 	case 0x0A:
 		// LD A, (BC)
 		c.ldRegAddr(A, toWord(c.R[B], c.R[C]))
@@ -342,10 +345,16 @@ func (c *CPU) Tick() {
 		c.ldRegAddr(A, toWord(0xFF, c.R[C]))
 	case 0xF9:
 		// LD SP, HL
-		c.ldSpWord(toWord(c.R[H], c.R[L]))
+		// Added artifical internal delay: https://github.com/Gekkio/mooneye-gb/blob/master/docs/accuracy.markdown#some-instructions-take-more-cycles-than-just-the-memory-accesses-at-which-point-in-the-instruction-execution-do-these-extra-cycles-occur
+		c.ldSpWord(toWord(c.R[H], c.R[L])).delay(1, 4)
 	case 0xFA:
 		// LD A, (nn)
 		c.ldRegAddr(A, c.readWord())
+	case 0xF8:
+		// LD HL, SP+n
+		// LDHL SP, n
+		// Added artifical internal delay: https://github.com/Gekkio/mooneye-gb/blob/master/docs/accuracy.markdown#some-instructions-take-more-cycles-than-just-the-memory-accesses-at-which-point-in-the-instruction-execution-do-these-extra-cycles-occur
+		c.ldHLSPn().delay(1, 4)
 	}
 }
 
@@ -382,17 +391,46 @@ func (c *CPU) ldAddrReg(addr uint16, src Register) *CPU {
 	return c
 }
 
+func (c *CPU) ldAddrByte(addr uint16, b uint8) *CPU {
+	c.MMU.WriteByte(addr, b)
+	c.M++
+	c.T += 4
+	return c
+}
+
+func (c *CPU) ldAddrWord(addr uint16, w uint16) *CPU {
+	c.MMU.WriteByte(addr, uint8(w&0xFF))
+	c.MMU.WriteByte(addr+1, uint8(w&0xFF00>>8))
+	c.M += 2
+	c.T += 8
+	return c
+}
+
 // Load stack pointer variants
 func (c *CPU) ldSpWord(word uint16) *CPU {
 	c.SP = word
 	return c
 }
 
-func (c *CPU) ldAddrByte(addr uint16, b uint8) *CPU {
-	c.MMU.WriteByte(addr, b)
-	c.M++
-	c.T += 4
-	return c
+func (c *CPU) ldHLSPn() *CPU {
+	// fetch signed byte from PC
+	n := uint16(int16(c.readByte()))
+	sp := c.SP + n
+
+	// reset F register
+	c.R[F] = 0
+
+	// detect half carry
+	if ((c.SP&0xF)+(n&0xF))&0x10 == 0x10 {
+		c.R[F] |= 0x20
+	}
+
+	// detect carry
+	if ((c.SP&0xFF)+(n&0xFF))&0x100 == 0x100 {
+		c.R[F] |= 0x10
+	}
+
+	return c.ldWordWord(H, L, sp)
 }
 
 // read a byte from the PC a.k.a `n`
@@ -420,6 +458,12 @@ func (c *CPU) incWord(upper, lower Register) *CPU {
 	w := toWord(c.R[upper], c.R[lower]) + 1
 	c.R[upper] = uint8(w >> 8)
 	c.R[lower] = uint8(w & 0xFF)
+	return c
+}
+
+func (c *CPU) delay(m, t int) *CPU {
+	c.M += m
+	c.T += t
 	return c
 }
 
