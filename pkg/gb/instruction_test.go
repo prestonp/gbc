@@ -3,6 +3,7 @@ package gb
 import (
 	"testing"
 
+	"github.com/prestonp/gbc/pkg/gb/apu"
 	"github.com/stretchr/testify/require"
 )
 
@@ -19,7 +20,8 @@ func TestAddSignedByte(t *testing.T) {
 }
 
 func TestBit(t *testing.T) {
-	mmu := NewMMU(nil, nil, nil)
+	apu := apu.New()
+	mmu := NewMMU(nil, nil, nil, apu)
 	cpu := NewCPU(mmu, false)
 
 	t.Run("check specific bit in a register", func(t *testing.T) {

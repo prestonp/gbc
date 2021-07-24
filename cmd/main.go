@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/prestonp/gbc/pkg/gb"
+	"github.com/prestonp/gbc/pkg/gb/apu"
 	"github.com/prestonp/gbc/pkg/gb/gpu"
 )
 
@@ -35,7 +36,8 @@ func main() {
 	}
 
 	gpu := gpu.New()
-	mmu := gb.NewMMU(bootRom, cartRom, gpu)
+	apu := apu.New()
+	mmu := gb.NewMMU(bootRom, cartRom, gpu, apu)
 	cpu := gb.NewCPU(mmu, *debug)
 
 	cpu.Run()

@@ -31,9 +31,10 @@ type MMU struct {
 	SC   byte
 
 	gpu GPU
+	apu APU
 }
 
-func NewMMU(bootRom, cartRom []uint8, gpu GPU) *MMU {
+func NewMMU(bootRom, cartRom []uint8, gpu GPU, apu APU) *MMU {
 	return &MMU{
 		boot: bootRom,
 		rom:  cartRom,
@@ -42,6 +43,7 @@ func NewMMU(bootRom, cartRom []uint8, gpu GPU) *MMU {
 		hram: make([]byte, 256),
 		IF:   0,
 		gpu:  gpu,
+		apu:  apu,
 	}
 }
 
@@ -73,6 +75,8 @@ func (m *MMU) ReadByte(a uint16) byte {
 	case a == 0xFF0F:
 		// IF Interrupt flag
 		return byte(m.IF)
+	case a >= 0xFF10 && a <= 0xFF26:
+		return m.apu.GetRegister(a)
 	case a == 0xFF40:
 		// LCD Control
 		return m.gpu.GetControl()
@@ -116,6 +120,8 @@ func (m *MMU) WriteByte(a uint16, n uint8) {
 	case a == 0xFF0F:
 		// IF - Interrupt Flag
 		m.IF = ByteFlag(n)
+	case a >= 0xFF10 && a <= 0xFF26:
+		m.apu.SetRegister(a, n)
 	case a == 0xFF40:
 		// LCD Control
 		m.gpu.SetControl(n)

@@ -63,6 +63,13 @@ func ld_a16_reg(addr uint16, reg Register) instruction {
 		c.MMU.WriteByte(addr, c.R[reg])
 	}
 }
+func ld_offset_addr(offset, src Register) instruction {
+	return func(c *CPU) {
+		addr := 0xFF00 + uint16(c.R[offset])
+		c.MMU.WriteByte(addr, c.R[src])
+		c.Debugf("exec ld (0x%04X) = 0x%02X\n", addr, c.R[src])
+	}
+}
 
 func ldh_a8_reg(src Register) instruction {
 	return func(c *CPU) {
