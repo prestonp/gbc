@@ -29,12 +29,13 @@ type MMU struct {
 	IE   ByteFlag
 	SB   byte
 	SC   byte
+	BGP  byte // background and window palette
 
 	gpu GPU
-	apu APU
+	apu Module
 }
 
-func NewMMU(bootRom, cartRom []uint8, gpu GPU, apu APU) *MMU {
+func NewMMU(bootRom, cartRom []uint8, gpu GPU, apu Module) *MMU {
 	return &MMU{
 		boot: bootRom,
 		rom:  cartRom,
@@ -88,6 +89,8 @@ func (m *MMU) ReadByte(a uint16) byte {
 		return m.gpu.GetScrollX()
 	case a == 0xFF44:
 		return m.gpu.GetLY()
+	case a == 0xFF47:
+		return m.gpu.GetRegister(a)
 	case a >= 0xFF80 && a < 0xFFFF:
 		return m.hram[a-0xFF80]
 	case a == 0xFFFF:
@@ -133,6 +136,8 @@ func (m *MMU) WriteByte(a uint16, n uint8) {
 		m.gpu.SetScrollX(n)
 	case a == 0xFF44:
 		m.gpu.ResetLY()
+	case a == 0xFF47:
+		m.gpu.SetRegister(a, n)
 	case a >= 0xFF80 && a < 0xFFFF:
 		// high ram
 		m.hram[a-0xFF80] = n

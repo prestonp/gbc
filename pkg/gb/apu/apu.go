@@ -6,6 +6,8 @@ type APU struct {
 	nr10 byte
 	nr11 byte
 	nr12 byte
+	nr50 byte // unimplemented
+	nr51 byte // unimplemented
 	nr52 byte
 }
 
@@ -21,6 +23,10 @@ func (a *APU) SetRegister(addr uint16, b byte) {
 		a.nr11 = b
 	case addr == 0xFF12:
 		a.nr12 = b
+	case addr == 0xFF24:
+		a.nr50 = b
+	case addr == 0xFF25:
+		a.nr51 = b
 	case addr == 0xFF26:
 		a.nr52 = b & 0x8F
 	default:
@@ -36,6 +42,10 @@ func (a *APU) GetRegister(addr uint16) byte {
 		return a.nr11
 	case addr == 0xFF12:
 		return a.nr12
+	case addr == 0xFF24:
+		return a.nr50
+	case addr == 0xFF25:
+		return a.nr51
 	case addr == 0xFF26:
 		return a.nr52
 	default:

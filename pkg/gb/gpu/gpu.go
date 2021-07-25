@@ -2,6 +2,7 @@ package gpu
 
 import (
 	"fmt"
+	"log"
 	"strings"
 )
 
@@ -21,6 +22,8 @@ type GPU struct {
 	objSize                bool
 	objEnable              bool
 	bgAndWinEnablePriority bool
+
+	bgp byte
 }
 
 func (g *GPU) String() string {
@@ -31,6 +34,40 @@ func (g *GPU) String() string {
 	fmt.Fprintf(&b, "\tlcd status: %08b\n", g.stat)
 	fmt.Fprintf(&b, "\tlcd control: %08b\n", g.GetControl())
 	return b.String()
+}
+
+func (g *GPU) SetRegister(addr uint16, b byte) {
+	switch {
+	case addr == 0xFF47:
+		g.bgp = b
+	default:
+		log.Fatalf("unimplemented gpu register 0x%04X = 0x%02X\n", addr, b)
+	}
+}
+
+func (g *GPU) GetRegister(addr uint16) byte {
+	switch {
+	case addr == 0xFF47:
+		return g.bgp
+	default:
+		log.Fatalf("unimplemented gpu register 0x%04X\n", addr)
+	}
+	panic("unexpected gpu failure")
+}
+
+type Dot byte
+
+const (
+	DotLighter Dot = iota
+	DotLight
+	DotDark
+	DotDarker
+)
+
+func (g *GPU) getPalette(d Dot) byte {
+	offset := 2 * d
+	color := (g.bgp >> offset)
+	return color & 0b11
 }
 
 func New() *GPU {

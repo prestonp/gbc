@@ -244,6 +244,12 @@ func (c *CPU) decode(b byte) instruction {
 			label("LD H, C"),
 			ld_reg_reg(H, C),
 		)
+	case 0x77:
+		addr := toWord(c.R[H], c.R[L])
+		return build(
+			label("LD (HL), A"),
+			ld_a16_reg(addr, A),
+		)
 	case 0xA7:
 		return build(
 			label("AND A"),
@@ -330,10 +336,13 @@ type GPU interface {
 
 	GetLY() byte
 	ResetLY()
+
+	// todo: deprecate above methods and just rely on Module interface
+	Module
 }
 
-// APU is the audio processing unit
-type APU interface {
+// Module represents another memory mapped module such as the GPU or APU
+type Module interface {
 	GetRegister(addr uint16) byte
 	SetRegister(addr uint16, b byte)
 }
