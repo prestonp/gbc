@@ -39,3 +39,19 @@ func TestBit(t *testing.T) {
 		require.Equal(t, cpu.R[F]&FlagHalfCarry, FlagHalfCarry)
 	})
 }
+
+func TestInc(t *testing.T) {
+	cpu := NewCPU(nil, false)
+	cpu.R[C] = 0xF
+	inc := inc_reg(C)
+	inc(cpu)
+	require.NotEqual(t, FlagZero, cpu.R[F]&FlagZero)
+	require.Zero(t, cpu.R[F]&FlagSubtract)
+	require.Equal(t, FlagHalfCarry, cpu.R[F]&FlagHalfCarry)
+
+	cpu.R[C] = 0xE
+	inc(cpu)
+	require.NotEqual(t, FlagZero, cpu.R[F]&FlagZero)
+	require.Zero(t, cpu.R[F]&FlagSubtract)
+	require.Zero(t, cpu.R[F]&FlagHalfCarry)
+}

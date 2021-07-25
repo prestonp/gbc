@@ -141,7 +141,31 @@ func dec_reg(r Register) instruction {
 		c.R[F] |= FlagSubtract
 		if c.R[F] == 0xF {
 			c.R[F] |= FlagHalfCarry
+		} else {
+			c.R[F] &= ^FlagHalfCarry
 		}
+	}
+}
+
+func halfCarryAdd(a, b byte) bool {
+	return (a&0xF+b&0xF)&0x10 == 0x10
+}
+
+func inc_reg(r Register) instruction {
+	return func(c *CPU) {
+		if halfCarryAdd(c.R[r], 1) {
+			c.R[F] |= FlagHalfCarry
+		} else {
+			c.R[F] &= ^FlagHalfCarry
+		}
+
+		c.R[r]++
+
+		if c.R[r] == 0 {
+			c.R[F] |= FlagZero
+		}
+
+		c.R[F] &= ^FlagSubtract
 	}
 }
 
