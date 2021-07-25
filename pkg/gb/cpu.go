@@ -179,6 +179,11 @@ func (c *CPU) decode(b byte) instruction {
 			label("LD B, d8"),
 			ld_reg_d8(B),
 		)
+	case 0x0C:
+		return build(
+			label("DEC C"),
+			dec_reg(C),
+		)
 	case 0x0D:
 		return build(
 			label("DEC C"),
