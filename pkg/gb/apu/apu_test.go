@@ -23,3 +23,16 @@ func TestSweep(t *testing.T) {
 	require.EqualValues(t, false, apu.sweepMode())
 	require.EqualValues(t, 0, apu.sweepShift())
 }
+
+func TestEnvelope(t *testing.T) {
+	apu := New()
+	apu.SetRegister(0xFF12, 0xF3)
+	require.EqualValues(t, 0xF, apu.envelopeInitVolume())
+	require.EqualValues(t, false, apu.envelopeMode())
+	require.EqualValues(t, 0b011, apu.envelopeSweep())
+
+	apu.SetRegister(0xFF12, 0)
+	require.EqualValues(t, 0, apu.envelopeInitVolume())
+	require.EqualValues(t, false, apu.envelopeMode())
+	require.EqualValues(t, 0, apu.envelopeSweep())
+}

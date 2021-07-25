@@ -3,9 +3,10 @@ package apu
 import "log"
 
 type APU struct {
-	nr52 byte
-	nr11 byte
 	nr10 byte
+	nr11 byte
+	nr12 byte
+	nr52 byte
 }
 
 func New() *APU {
@@ -18,6 +19,8 @@ func (a *APU) SetRegister(addr uint16, b byte) {
 		a.nr10 = b & 0x7F
 	case addr == 0xFF11:
 		a.nr11 = b
+	case addr == 0xFF12:
+		a.nr12 = b
 	case addr == 0xFF26:
 		a.nr52 = b & 0x8F
 	default:
@@ -31,6 +34,8 @@ func (a *APU) GetRegister(addr uint16) byte {
 		return a.nr10
 	case addr == 0xFF11:
 		return a.nr11
+	case addr == 0xFF12:
+		return a.nr12
 	case addr == 0xFF26:
 		return a.nr52
 	default:
@@ -54,4 +59,20 @@ func (a *APU) sweepMode() bool {
 
 func (a *APU) sweepShift() byte {
 	return a.nr10 & 0x7
+}
+
+func (a *APU) envelopeInitVolume() byte {
+	return a.nr12 >> 4
+}
+
+// false: attenuate
+// true: amplify
+func (a *APU) envelopeMode() bool {
+	return a.nr12&0x8 == 0x8
+}
+
+// false: attenuate
+// true: amplify
+func (a *APU) envelopeSweep() byte {
+	return a.nr12 & 0x7
 }
