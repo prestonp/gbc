@@ -34,6 +34,13 @@ func ldd_addr_reg(addr uint16, r Register) instruction {
 	}
 }
 
+func ldi_addr_reg(addr uint16, r Register) instruction {
+	return func(c *CPU) {
+		ld_a16_reg(addr, r)(c)
+		inc_nn(H, L)(c)
+	}
+}
+
 func ld_word(upper, lower Register, msb, lsb byte) instruction {
 	return func(c *CPU) {
 		c.R[upper] = msb
@@ -137,6 +144,13 @@ func dec_a16(addr uint16) instruction {
 func dec_nn(upper, lower Register) instruction {
 	return func(c *CPU) {
 		word := toWord(c.R[upper], c.R[lower]) - 1
+		c.R[upper] = byte(word >> 8)
+		c.R[lower] = byte(word & 0xFF)
+	}
+}
+func inc_nn(upper, lower Register) instruction {
+	return func(c *CPU) {
+		word := toWord(c.R[upper], c.R[lower]) + 1
 		c.R[upper] = byte(word >> 8)
 		c.R[lower] = byte(word & 0xFF)
 	}
@@ -276,6 +290,16 @@ func push(upper, lower Register) instruction {
 	}
 }
 
+func pop(upper, lower Register) instruction {
+	return func(c *CPU) {
+		msb := c.stackPop()
+		lsb := c.stackPop()
+		c.R[upper] = msb
+		c.R[lower] = lsb
+		c.Debugf("exec POP %s%s = 0x%04X\n", upper, lower, toWord(msb, lsb))
+	}
+}
+
 func rl_reg(r Register) instruction {
 	return func(c *CPU) {
 		prevCarry := c.R[F] & FlagCarry
@@ -302,4 +326,11 @@ func rl_addr(addr uint16) instruction {
 	return func(c *CPU) {
 
 	}
+}
+
+func ret(c *CPU) {
+	msb := c.stackPop()
+	lsb := c.stackPop()
+	c.PC = toWord(msb, lsb)
+	c.Debugf("exec RET - PC jumping to 0x%04X\n", c.PC)
 }

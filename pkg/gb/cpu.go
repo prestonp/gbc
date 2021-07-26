@@ -202,6 +202,11 @@ func (c *CPU) decode(b byte) instruction {
 			label("LD DE, d16"),
 			ld_word(D, E, msb, lsb),
 		)
+	case 0x17:
+		return build(
+			label("RLA"),
+			rl_reg(A),
+		)
 	case 0x18:
 		return build(
 			label("JR r8"),
@@ -224,6 +229,17 @@ func (c *CPU) decode(b byte) instruction {
 		return build(
 			label("ld HL, d16"),
 			ld_word(H, L, msb, lsb),
+		)
+	case 0x22:
+		addr := toWord(c.R[H], c.R[L])
+		return build(
+			label("LD (HL+), A"),
+			ldi_addr_reg(addr, A),
+		)
+	case 0x23:
+		return build(
+			label("INC HL"),
+			inc_nn(H, L),
 		)
 	case 0x28:
 		return build(
@@ -279,10 +295,20 @@ func (c *CPU) decode(b byte) instruction {
 			label("XOR A"),
 			xor(c.R[A]),
 		)
+	case 0xC1:
+		return build(
+			label("POP BC"),
+			pop(B, C),
+		)
 	case 0xC5:
 		return build(
 			label("PUSH BC"),
 			push(B, C),
+		)
+	case 0xC9:
+		return build(
+			label("RET"),
+			ret,
 		)
 	case 0xCB:
 		return c.decodeExtended(c.readByte())
