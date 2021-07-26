@@ -55,3 +55,30 @@ func TestInc(t *testing.T) {
 	require.Zero(t, cpu.R[F]&FlagSubtract)
 	require.Zero(t, cpu.R[F]&FlagHalfCarry)
 }
+
+func TestRotate(t *testing.T) {
+	t.Run("rl reg", func(t *testing.T) {
+		cpu := NewCPU(nil, false)
+		rotate := rl_reg(B)
+		{
+			cpu.R[B] = 0x80
+			cpu.R[F] = FlagCarry
+
+			rotate(cpu)
+
+			require.EqualValues(t, 0x01, cpu.R[B])
+			require.EqualValues(t, FlagCarry, cpu.R[F]&FlagCarry, "7th bit should've set carry flag")
+			require.EqualValues(t, 1, cpu.R[B]&1, "0th bit should've shifted in previous carry flag")
+		}
+		{
+			cpu.R[B] = 0x7F
+			cpu.R[F] = 0
+
+			rotate(cpu)
+
+			require.EqualValues(t, 0xFE, cpu.R[B])
+			require.EqualValues(t, 0, cpu.R[F]&FlagCarry, "7th bit clear carry flag")
+			require.EqualValues(t, 0, cpu.R[B]&1, "0th bit should've shifted in previous carry flag")
+		}
+	})
+}

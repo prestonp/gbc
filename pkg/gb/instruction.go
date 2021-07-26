@@ -9,6 +9,11 @@ func instructionNotImplemented(op byte) instruction {
 		log.Fatalf("unimplemented instruction 0x%02X", op)
 	}
 }
+func extendedInstructionNotImplemented(op byte) instruction {
+	return func(c *CPU) {
+		log.Fatalf("unimplemented extended instruction 0xCB 0x%02X", op)
+	}
+}
 
 func noop(c *CPU) {
 	c.Debugf("noop\n")
@@ -29,11 +34,11 @@ func ldd_addr_reg(addr uint16, r Register) instruction {
 	}
 }
 
-func ld_word(H, L Register, msb, lsb byte) instruction {
+func ld_word(upper, lower Register, msb, lsb byte) instruction {
 	return func(c *CPU) {
-		c.R[H] = msb
-		c.R[L] = lsb
-		c.Debugf("exec ld HL 0x%02X%02X\n", msb, lsb)
+		c.R[upper] = msb
+		c.R[lower] = lsb
+		c.Debugf("exec ld %s%s 0x%02X%02X\n", upper, lower, msb, lsb)
 	}
 }
 
@@ -55,6 +60,13 @@ func ld_reg_d8(dst Register) instruction {
 	return func(c *CPU) {
 		c.R[dst] = c.readByte()
 		c.Debugf("exec ld %s 0x%02X\n", dst, c.R[dst])
+	}
+}
+
+func ld_reg_addr(r Register, addr uint16) instruction {
+	return func(c *CPU) {
+		c.R[r] = c.MMU.ReadByte(addr)
+		c.Debugf("exec LD %s, 0x%02X\n", r, c.R[r])
 	}
 }
 
@@ -242,5 +254,52 @@ func bit(idx int, r Register) instruction {
 		}
 		c.R[F] |= FlagHalfCarry
 		c.Debugf("checking bit %d of register %s\n", idx, r)
+	}
+}
+
+func call(addr uint16) instruction {
+	return func(c *CPU) {
+		c.Debugf("exec call: push PC 0x%04X onto stack, jumping to 0x%04X\n", c.PC, addr)
+		lsb := byte(c.PC & 0xFF)
+		msb := byte(c.PC >> 8)
+		c.stackPush(lsb)
+		c.stackPush(msb)
+		c.PC = addr
+	}
+}
+
+func push(upper, lower Register) instruction {
+	return func(c *CPU) {
+		c.Debugf("exec push 0x%04X onto stack\n", toWord(c.R[upper], c.R[lower]))
+		c.stackPush(c.R[lower])
+		c.stackPush(c.R[upper])
+	}
+}
+
+func rl_reg(r Register) instruction {
+	return func(c *CPU) {
+		prevCarry := c.R[F] & FlagCarry
+		b7 := c.R[r] & 0x80
+
+		c.R[r] = c.R[r] << 1
+
+		if prevCarry == FlagCarry {
+			c.R[r] |= 1
+		}
+
+		c.R[F] = 0
+		if c.R[r] == 0 {
+			c.R[F] |= FlagZero
+		}
+
+		if b7 == 0x80 {
+			c.R[F] |= FlagCarry
+		}
+	}
+}
+
+func rl_addr(addr uint16) instruction {
+	return func(c *CPU) {
+
 	}
 }

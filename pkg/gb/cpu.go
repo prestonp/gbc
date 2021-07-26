@@ -142,7 +142,7 @@ func (c *CPU) resolveInterruptToggle() {
 
 func (c *CPU) fetch() byte {
 	op := c.readByte()
-	c.Debugf("fetched 0x%04X\n", op)
+	c.Debugf("fetched 0x%02X\n", op)
 	return op
 }
 
@@ -162,6 +162,7 @@ func label(s string) instruction {
 }
 
 // decode distinguishes the instruction and reads operands if necessary
+// todo: instructions should be created statically at start up
 func (c *CPU) decode(b byte) instruction {
 	switch b {
 	case 0x00:
@@ -194,10 +195,23 @@ func (c *CPU) decode(b byte) instruction {
 			label("LD C, d8"),
 			ld_reg_d8(C),
 		)
+	case 0x11:
+		lsb := c.readByte()
+		msb := c.readByte()
+		return build(
+			label("LD DE, d16"),
+			ld_word(D, E, msb, lsb),
+		)
 	case 0x18:
 		return build(
 			label("JR r8"),
 			jr_r8,
+		)
+	case 0x1A:
+		addr := toWord(c.R[D], c.R[E])
+		return build(
+			label("LD A, (DE)"),
+			ld_reg_addr(A, addr),
 		)
 	case 0x20:
 		return build(
@@ -239,6 +253,11 @@ func (c *CPU) decode(b byte) instruction {
 			label("LD B, A"),
 			ld_reg_reg(B, A),
 		)
+	case 0x4F:
+		return build(
+			label("LD C, A"),
+			ld_reg_reg(C, A),
+		)
 	case 0x61:
 		return build(
 			label("LD H, C"),
@@ -260,8 +279,21 @@ func (c *CPU) decode(b byte) instruction {
 			label("XOR A"),
 			xor(c.R[A]),
 		)
+	case 0xC5:
+		return build(
+			label("PUSH BC"),
+			push(B, C),
+		)
 	case 0xCB:
 		return c.decodeExtended(c.readByte())
+	case 0xCD:
+		lsb := c.readByte()
+		msb := c.readByte()
+		addr := toWord(msb, lsb)
+		return build(
+			label("CALL a16"),
+			call(addr),
+		)
 	case 0xC3:
 		return build(
 			label("JMP a16"),
@@ -298,11 +330,17 @@ func (c *CPU) decode(b byte) instruction {
 }
 
 func (c *CPU) decodeExtended(b byte) instruction {
+	c.Debugf("fetched extended instruction 0x%02X\n", b)
 	switch b {
+	case 0x11:
+		return build(
+			label("RL C"),
+			rl_reg(C),
+		)
 	case 0x7C:
 		return bit(7, H)
 	default:
-		return instructionNotImplemented(b)
+		return extendedInstructionNotImplemented(b)
 	}
 }
 
@@ -345,4 +383,15 @@ type GPU interface {
 type Module interface {
 	GetRegister(addr uint16) byte
 	SetRegister(addr uint16, b byte)
+}
+
+func (c *CPU) stackPush(b byte) {
+	c.SP--
+	c.MMU.WriteByte(c.SP, b)
+}
+
+func (c *CPU) stackPop() byte {
+	b := c.MMU.ReadByte(c.SP)
+	c.SP++
+	return b
 }
