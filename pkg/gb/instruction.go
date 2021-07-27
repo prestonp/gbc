@@ -80,6 +80,7 @@ func ld_reg_addr(r Register, addr uint16) instruction {
 func ld_a16_reg(addr uint16, reg Register) instruction {
 	return func(c *CPU) {
 		c.MMU.WriteByte(addr, c.R[reg])
+		c.Debugf("exec ld (0x%04X) = 0x%02X\n", addr, c.R[reg])
 	}
 }
 func ld_offset_addr(offset, src Register) instruction {
@@ -223,8 +224,12 @@ func jr_nz_r8(c *CPU) {
 }
 
 func jr_r8(c *CPU) {
-	offset := c.readByte()
-	c.PC += uint16(offset)
+	offset := int8(c.readByte())
+	if offset >= 0 {
+		c.PC += uint16(offset)
+	} else {
+		c.PC -= uint16(offset * -1)
+	}
 	c.Debugf("exec jr r8 -- jumping to 0x%04X\n", c.PC)
 }
 

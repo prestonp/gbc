@@ -218,6 +218,11 @@ func (c *CPU) decode(b byte) instruction {
 			label("LD A, (DE)"),
 			ld_reg_addr(A, addr),
 		)
+	case 0x13:
+		return build(
+			label("INC DE"),
+			inc_nn(D, E),
+		)
 	case 0x20:
 		return build(
 			label("JR NZ, r8"),
@@ -246,6 +251,11 @@ func (c *CPU) decode(b byte) instruction {
 			label("JR Z, r8"),
 			jr_z_r8,
 		)
+	case 0x2E:
+		return build(
+			label("LD L, d8"),
+			ld_reg_d8(L),
+		)
 	case 0x31:
 		lsb := c.readByte()
 		msb := c.readByte()
@@ -258,6 +268,11 @@ func (c *CPU) decode(b byte) instruction {
 		return build(
 			label("LD (HL-), A"),
 			ldd_addr_reg(addr, A),
+		)
+	case 0x3D:
+		return build(
+			label("DEC A"),
+			dec_reg(A),
 		)
 	case 0x3E:
 		return build(
@@ -284,6 +299,11 @@ func (c *CPU) decode(b byte) instruction {
 		return build(
 			label("LD (HL), A"),
 			ld_a16_reg(addr, A),
+		)
+	case 0x7B:
+		return build(
+			label("LD A, E"),
+			ld_reg_reg(A, E),
 		)
 	case 0xA7:
 		return build(
@@ -334,6 +354,14 @@ func (c *CPU) decode(b byte) instruction {
 		return build(
 			label("LD (C), A"),
 			ld_offset_addr(C, A),
+		)
+	case 0xEA:
+		lsb := c.readByte()
+		msb := c.readByte()
+		addr := toWord(msb, lsb)
+		return build(
+			label("LD (a16), A"),
+			ld_a16_reg(addr, A),
 		)
 	case 0xF0:
 		return build(
