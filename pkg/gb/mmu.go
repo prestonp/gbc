@@ -97,7 +97,7 @@ func (m *MMU) ReadByte(a uint16) byte {
 		// IE Interrupt enable
 		return byte(m.IE)
 	default:
-		log.Fatalf("unimplemented memory address: 0x%04X", a)
+		log.Panicf("unimplemented memory address: 0x%04X", a)
 	}
 	return 0
 }
@@ -145,7 +145,7 @@ func (m *MMU) WriteByte(a uint16, n uint8) {
 		// IE - Interrupt Enable
 		m.IE = ByteFlag(n)
 	default:
-		log.Fatalf("cannot write 0x%04X = 0x%02X", a, n)
+		log.Panicf("cannot write 0x%04X = 0x%02X", a, n)
 	}
 }
 

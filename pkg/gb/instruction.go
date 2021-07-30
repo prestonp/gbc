@@ -6,12 +6,12 @@ type instruction func(c *CPU)
 
 func instructionNotImplemented(op byte) instruction {
 	return func(c *CPU) {
-		log.Fatalf("unimplemented instruction 0x%02X", op)
+		log.Panicf("unimplemented instruction 0x%02X", op)
 	}
 }
 func extendedInstructionNotImplemented(op byte) instruction {
 	return func(c *CPU) {
-		log.Fatalf("unimplemented extended instruction 0xCB 0x%02X", op)
+		log.Panicf("unimplemented extended instruction 0xCB 0x%02X", op)
 	}
 }
 

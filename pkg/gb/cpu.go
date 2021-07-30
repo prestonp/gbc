@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log"
 	"strings"
+
+	"github.com/prestonp/gbc/pkg/logbuf"
 )
 
 type Register uint8
@@ -44,7 +46,7 @@ func (r Register) String() string {
 	case L:
 		return "L"
 	default:
-		log.Fatalf("unknown register: %d", r)
+		log.Panicf("unknown register: %d", r)
 	}
 	return ""
 }
@@ -66,6 +68,8 @@ type CPU struct {
 	IME      bool // interrupt master enable
 	shouldDI bool // disable interrupts
 	shouldEI bool // enable interrupts
+
+	log *logbuf.Buffer
 }
 
 var (
@@ -79,7 +83,8 @@ func (c *CPU) Debugf(s string, args ...interface{}) {
 	if !c.debug {
 		return
 	}
-	fmt.Printf("[debug] "+s, args...)
+
+	fmt.Fprintf(c.log, "[debug] "+s, args...)
 }
 
 func NewCPU(mmu *MMU, debug bool) *CPU {
@@ -90,6 +95,8 @@ func NewCPU(mmu *MMU, debug bool) *CPU {
 		R:     make([]uint8, 8),
 		MMU:   mmu,
 		debug: debug,
+
+		log: logbuf.New(1024),
 	}
 }
 
@@ -114,6 +121,13 @@ func (c *CPU) String() string {
 }
 
 func (c *CPU) Run() {
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println(c.log.String())
+			fmt.Println(r)
+		}
+	}()
+
 	for i := 0; ; i++ {
 		c.Debugf("%d ........\n", i)
 		c.resolveInterruptToggle()

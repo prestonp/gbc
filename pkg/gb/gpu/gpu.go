@@ -41,7 +41,7 @@ func (g *GPU) SetRegister(addr uint16, b byte) {
 	case addr == 0xFF47:
 		g.bgp = b
 	default:
-		log.Fatalf("unimplemented gpu register 0x%04X = 0x%02X\n", addr, b)
+		log.Panicf("unimplemented gpu register 0x%04X = 0x%02X\n", addr, b)
 	}
 }
 
@@ -50,7 +50,7 @@ func (g *GPU) GetRegister(addr uint16) byte {
 	case addr == 0xFF47:
 		return g.bgp
 	default:
-		log.Fatalf("unimplemented gpu register 0x%04X\n", addr)
+		log.Panicf("unimplemented gpu register 0x%04X\n", addr)
 	}
 	panic("unexpected gpu failure")
 }

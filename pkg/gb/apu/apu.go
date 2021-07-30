@@ -30,7 +30,7 @@ func (a *APU) SetRegister(addr uint16, b byte) {
 	case addr == 0xFF26:
 		a.nr52 = b & 0x8F
 	default:
-		log.Fatalf("unimplemented sound controller register 0x%04X = 0x%02X\n", addr, b)
+		log.Panicf("unimplemented sound controller register 0x%04X = 0x%02X\n", addr, b)
 	}
 }
 
@@ -49,9 +49,10 @@ func (a *APU) GetRegister(addr uint16) byte {
 	case addr == 0xFF26:
 		return a.nr52
 	default:
-		log.Fatalf("unimplemented sound controller register 0x%04X\n", addr)
+		log.Panicf("unimplemented sound controller register 0x%04X\n", addr)
 	}
-	panic("unexpected sound controller failure")
+	log.Panicf("unexpected sound controller failure")
+	return 0
 }
 
 // 000: sweep off - no freq change 001: 7.8 ms (1/128Hz)
