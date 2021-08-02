@@ -150,11 +150,11 @@ func (g *GPU) GetLY() byte {
 	// return g.ly
 }
 
-func (g *GPU) Loop(update func()) {
+func (g *GPU) Run() {
 	cfg := pixelgl.WindowConfig{
 		Title:  "gameboy",
 		Bounds: pixel.R(0, 0, 1024, 768),
-		// VSync:  true,
+		VSync:  true,
 	}
 
 	win, err := pixelgl.NewWindow(cfg)
@@ -163,7 +163,6 @@ func (g *GPU) Loop(update func()) {
 	}
 
 	for !win.Closed() {
-		update()
 		g.render()
 		win.Update()
 	}

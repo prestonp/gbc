@@ -123,7 +123,21 @@ func (c *CPU) String() string {
 }
 
 func (c *CPU) Run() {
-	c.GPU.Loop(c.Update)
+	done := make(chan bool)
+	defer close(done)
+
+	go func() {
+		for {
+			select {
+			case <-done:
+				return
+			default:
+				c.Update()
+			}
+		}
+	}()
+
+	c.GPU.Run()
 }
 
 func (c *CPU) Update() {
@@ -291,8 +305,7 @@ type GPU interface {
 	// todo: deprecate above methods and just rely on Module interface
 	Module
 
-	// Loop sets up graphics and runs the game loop, calling the update function on each tick
-	Loop(update func())
+	Run()
 }
 
 // Module represents another memory mapped module such as the GPU or APU
