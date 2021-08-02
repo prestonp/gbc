@@ -3,6 +3,7 @@ package gb
 import (
 	"fmt"
 	"log"
+	"os"
 	"strings"
 
 	"github.com/prestonp/gbc/pkg/logbuf"
@@ -130,6 +131,7 @@ func (c *CPU) Update() {
 		if r := recover(); r != nil {
 			fmt.Println(c.log.String())
 			fmt.Println(r)
+			os.Exit(1)
 		}
 	}()
 
@@ -177,240 +179,82 @@ func label(s string) instruction {
 	}
 }
 
-// decode distinguishes the instruction and reads operands if necessary
-// todo: instructions should be created statically at start up
+var extendedOps = map[byte]instruction{
+	0x11: build(label("RL C"), rl_reg(C)),
+	0x7C: bit(7, H),
+}
+
+var ops = map[byte]instruction{
+	0x00: build(label("noop"), noop),
+	0x05: build(label("DEC B"), dec_reg(B)),
+	0x06: build(label("LD B, d8"), ld_reg_d8(B)),
+	0x0C: build(label("INC C"), inc_reg(C)),
+	0x0D: build(label("DEC C"), dec_reg(C)),
+	0x0E: build(label("LD C, d8"), ld_reg_d8(C)),
+
+	0x11: build(label("LD DE, d16"), ld_word(D, E)),
+	0x17: build(label("RLA"), rl_reg(A)),
+	0x18: build(label("JR r8"), jr_r8),
+	0x1A: build(label("LD A, (DE)"), ld_reg_word(A, D, E)),
+	0x13: build(label("INC DE"), inc_nn(D, E)),
+
+	0x20: build(label("JR NZ, r8"), jr_nz_r8),
+	0x21: build(label("ld HL, d16"), ld_word(H, L)),
+	0x22: build(label("LD (HL+), A"), ldi_hl_reg(A)),
+	0x23: build(label("INC HL"), inc_nn(H, L)),
+	0x28: build(label("JR Z, r8"), jr_z_r8),
+	0x2E: build(label("LD L, d8"), ld_reg_d8(L)),
+
+	0x31: build(label("LD SP, d16"), ld_sp_word),
+	0x32: build(label("LD (HL-), A"), ldd_hl_reg(A)),
+	0x3D: build(label("DEC A"), dec_reg(A)),
+	0x3E: build(label("LD A, d8"), ld_reg_d8(A)),
+
+	0x47: build(label("LD B, A"), ld_reg_reg(B, A)),
+	0x4F: build(label("LD C, A"), ld_reg_reg(C, A)),
+
+	0x61: build(label("LD H, C"), ld_reg_reg(H, C)),
+
+	0x77: build(label("LD (HL), A"), ld_addrhl_reg(A)),
+	0x7B: build(label("LD A, E"), ld_reg_reg(A, E)),
+
+	0xA7: build(label("AND A"), and_reg(A)),
+	0xAF: build(label("XOR A"), xor_reg(A)),
+
+	0xC1: build(label("POP BC"), pop(B, C)),
+	0xC5: build(label("PUSH BC"), push(B, C)),
+	0xC9: build(label("RET"), ret),
+	0xCD: build(label("CALL a16"), call_a16),
+	0xC3: build(label("JMP a16"), jmp_a16),
+
+	0xE0: build(label("LDH (a8), A"), ldh_a8_reg(A)),
+	0xE2: build(label("LD (C), A"), ld_offset_addr(C, A)),
+	0xEA: build(label("LD (a16), A"), ld_a16_reg(A)),
+
+	0xF0: build(label("LDH A, (a8)"), ldh_reg_a8(A)),
+	0xF3: build(label("DI"), di),
+	0xFE: build(label("CP d8"), cp_byte),
+}
+
+// decode distinguishes the instructions
 func (c *CPU) decode(b byte) instruction {
-	switch b {
-	case 0x00:
-		return build(
-			label("noop"),
-			noop,
-		)
-	case 0x05:
-		return build(
-			label("DEC B"),
-			dec_reg(B),
-		)
-	case 0x06:
-		return build(
-			label("LD B, d8"),
-			ld_reg_d8(B),
-		)
-	case 0x0C:
-		return build(
-			label("INC C"),
-			inc_reg(C),
-		)
-	case 0x0D:
-		return build(
-			label("DEC C"),
-			dec_reg(C),
-		)
-	case 0x0E:
-		return build(
-			label("LD C, d8"),
-			ld_reg_d8(C),
-		)
-	case 0x11:
-		lsb := c.readByte()
-		msb := c.readByte()
-		return build(
-			label("LD DE, d16"),
-			ld_word(D, E, msb, lsb),
-		)
-	case 0x17:
-		return build(
-			label("RLA"),
-			rl_reg(A),
-		)
-	case 0x18:
-		return build(
-			label("JR r8"),
-			jr_r8,
-		)
-	case 0x1A:
-		addr := toWord(c.R[D], c.R[E])
-		return build(
-			label("LD A, (DE)"),
-			ld_reg_addr(A, addr),
-		)
-	case 0x13:
-		return build(
-			label("INC DE"),
-			inc_nn(D, E),
-		)
-	case 0x20:
-		return build(
-			label("JR NZ, r8"),
-			jr_nz_r8,
-		)
-	case 0x21:
-		lsb := c.readByte()
-		msb := c.readByte()
-		return build(
-			label("ld HL, d16"),
-			ld_word(H, L, msb, lsb),
-		)
-	case 0x22:
-		addr := toWord(c.R[H], c.R[L])
-		return build(
-			label("LD (HL+), A"),
-			ldi_addr_reg(addr, A),
-		)
-	case 0x23:
-		return build(
-			label("INC HL"),
-			inc_nn(H, L),
-		)
-	case 0x28:
-		return build(
-			label("JR Z, r8"),
-			jr_z_r8,
-		)
-	case 0x2E:
-		return build(
-			label("LD L, d8"),
-			ld_reg_d8(L),
-		)
-	case 0x31:
-		lsb := c.readByte()
-		msb := c.readByte()
-		return build(
-			label("LD SP, d16"),
-			ld_sp_word(msb, lsb),
-		)
-	case 0x32:
-		addr := toWord(c.R[H], c.R[L])
-		return build(
-			label("LD (HL-), A"),
-			ldd_addr_reg(addr, A),
-		)
-	case 0x3D:
-		return build(
-			label("DEC A"),
-			dec_reg(A),
-		)
-	case 0x3E:
-		return build(
-			label("LD A, d8"),
-			ld_reg_d8(A),
-		)
-	case 0x47:
-		return build(
-			label("LD B, A"),
-			ld_reg_reg(B, A),
-		)
-	case 0x4F:
-		return build(
-			label("LD C, A"),
-			ld_reg_reg(C, A),
-		)
-	case 0x61:
-		return build(
-			label("LD H, C"),
-			ld_reg_reg(H, C),
-		)
-	case 0x77:
-		addr := toWord(c.R[H], c.R[L])
-		return build(
-			label("LD (HL), A"),
-			ld_a16_reg(addr, A),
-		)
-	case 0x7B:
-		return build(
-			label("LD A, E"),
-			ld_reg_reg(A, E),
-		)
-	case 0xA7:
-		return build(
-			label("AND A"),
-			and_reg(A),
-		)
-	case 0xAF:
-		return build(
-			label("XOR A"),
-			xor(c.R[A]),
-		)
-	case 0xC1:
-		return build(
-			label("POP BC"),
-			pop(B, C),
-		)
-	case 0xC5:
-		return build(
-			label("PUSH BC"),
-			push(B, C),
-		)
-	case 0xC9:
-		return build(
-			label("RET"),
-			ret,
-		)
-	case 0xCB:
+	if b == 0xCB {
 		return c.decodeExtended(c.readByte())
-	case 0xCD:
-		lsb := c.readByte()
-		msb := c.readByte()
-		addr := toWord(msb, lsb)
-		return build(
-			label("CALL a16"),
-			call(addr),
-		)
-	case 0xC3:
-		return build(
-			label("JMP a16"),
-			jmp_a16,
-		)
-	case 0xE0:
-		return build(
-			label("LDH (a8), A"),
-			ldh_a8_reg(A),
-		)
-	case 0xE2:
-		return build(
-			label("LD (C), A"),
-			ld_offset_addr(C, A),
-		)
-	case 0xEA:
-		lsb := c.readByte()
-		msb := c.readByte()
-		addr := toWord(msb, lsb)
-		return build(
-			label("LD (a16), A"),
-			ld_a16_reg(addr, A),
-		)
-	case 0xF0:
-		return build(
-			label("LDH A, (a8)"),
-			ldh_reg_a8(A),
-		)
-	case 0xF3:
-		return build(
-			label("DI"),
-			di,
-		)
-	case 0xFE:
-		return build(
-			label("CP d8"),
-			cp_byte(c.readByte()),
-		)
-	default:
+	}
+
+	if op, ok := ops[b]; !ok {
 		return instructionNotImplemented(b)
+	} else {
+		return op
 	}
 }
 
 func (c *CPU) decodeExtended(b byte) instruction {
 	c.Debugf("fetched extended instruction 0x%02X\n", b)
-	switch b {
-	case 0x11:
-		return build(
-			label("RL C"),
-			rl_reg(C),
-		)
-	case 0x7C:
-		return bit(7, H)
-	default:
+	if op, ok := extendedOps[b]; !ok {
 		return extendedInstructionNotImplemented(b)
+	} else {
+		return op
 	}
 }
 

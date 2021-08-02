@@ -29,31 +29,54 @@ func jmp_a16(c *CPU) {
 
 func ldd_addr_reg(addr uint16, r Register) instruction {
 	return func(c *CPU) {
-		ld_a16_reg(addr, r)(c)
+		ld_addr_reg(addr, r)(c)
 		dec_nn(H, L)(c)
+	}
+}
+
+func ldd_hl_reg(r Register) instruction {
+	return func(c *CPU) {
+		addr := toWord(c.R[H], c.R[L])
+		ldd := ldd_addr_reg(addr, r)
+		ldd(c)
 	}
 }
 
 func ldi_addr_reg(addr uint16, r Register) instruction {
 	return func(c *CPU) {
-		ld_a16_reg(addr, r)(c)
+		ld_addr_reg(addr, r)(c)
 		inc_nn(H, L)(c)
 	}
 }
 
-func ld_word(upper, lower Register, msb, lsb byte) instruction {
+func ldi_hl_reg(r Register) instruction {
 	return func(c *CPU) {
-		c.R[upper] = msb
-		c.R[lower] = lsb
-		c.Debugf("exec ld %s%s 0x%02X%02X\n", upper, lower, msb, lsb)
+		addr := toWord(c.R[H], c.R[L])
+		ldi := ldi_addr_reg(addr, r)
+		ldi(c)
 	}
 }
 
-func ld_sp_word(msb, lsb byte) instruction {
+func ld_word(upper, lower Register) instruction {
 	return func(c *CPU) {
-		c.SP = toWord(msb, lsb)
-		c.Debugf("exec ld SP 0x%02X%02X\n", msb, lsb)
+		c.R[lower] = c.readByte()
+		c.R[upper] = c.readByte()
+		c.Debugf("exec ld %s%s 0x%02X%02X\n", upper, lower, c.R[upper], c.R[lower])
 	}
+}
+
+func ld_addrhl_reg(r Register) instruction {
+	return func(c *CPU) {
+		addr := toWord(c.R[H], c.R[L])
+		c.MMU.WriteByte(addr, c.R[r])
+	}
+}
+
+func ld_sp_word(c *CPU) {
+	lsb := c.readByte()
+	msb := c.readByte()
+	c.SP = toWord(msb, lsb)
+	c.Debugf("exec ld SP 0x%02X%02X\n", msb, lsb)
 }
 
 func ld_reg_reg(dst, src Register) instruction {
@@ -77,12 +100,29 @@ func ld_reg_addr(r Register, addr uint16) instruction {
 	}
 }
 
-func ld_a16_reg(addr uint16, reg Register) instruction {
+func ld_reg_word(r, upper, lower Register) instruction {
+	return func(c *CPU) {
+		addr := toWord(c.R[upper], c.R[lower])
+		c.R[r] = c.MMU.ReadByte(addr)
+	}
+}
+
+func ld_a16_reg(reg Register) instruction {
+	return func(c *CPU) {
+		lsb := c.readByte()
+		msb := c.readByte()
+		addr := toWord(msb, lsb)
+		ld_addr_reg(addr, reg)(c)
+	}
+}
+
+func ld_addr_reg(addr uint16, reg Register) instruction {
 	return func(c *CPU) {
 		c.MMU.WriteByte(addr, c.R[reg])
 		c.Debugf("exec ld (0x%04X) = 0x%02X\n", addr, c.R[reg])
 	}
 }
+
 func ld_offset_addr(offset, src Register) instruction {
 	return func(c *CPU) {
 		addr := 0xFF00 + uint16(c.R[offset])
@@ -108,21 +148,20 @@ func ldh_reg_a8(dest Register) instruction {
 		c.Debugf("exec ldh %s %02X\n", dest, c.R[dest])
 	}
 }
-func cp_byte(b byte) instruction {
-	return func(c *CPU) {
-		c.R[F] = 0
-		if c.R[A] == b {
-			c.R[F] |= FlagZero
-		} else if c.R[A] < b {
-			c.R[F] |= FlagCarry
-		}
-		var diff byte = c.R[A] - b
-		if diff&0xF > c.R[A]&0xF {
-			c.R[F] |= FlagHalfCarry
-		}
-		c.R[F] |= FlagSubtract
-		c.Debugf("exec cp d8 (0x%02X) flags = 0b%04b\n", b, c.R[F]>>4)
+func cp_byte(c *CPU) {
+	b := c.readByte()
+	c.R[F] = 0
+	if c.R[A] == b {
+		c.R[F] |= FlagZero
+	} else if c.R[A] < b {
+		c.R[F] |= FlagCarry
 	}
+	var diff byte = c.R[A] - b
+	if diff&0xF > c.R[A]&0xF {
+		c.R[F] |= FlagHalfCarry
+	}
+	c.R[F] |= FlagSubtract
+	c.Debugf("exec cp d8 (0x%02X) flags = 0b%04b\n", b, c.R[F]>>4)
 }
 
 func dec_a16(addr uint16) instruction {
@@ -245,9 +284,9 @@ func and_reg(r Register) instruction {
 	}
 }
 
-func xor(b byte) instruction {
+func xor_reg(r Register) instruction {
 	return func(c *CPU) {
-		c.R[A] ^= b
+		c.R[A] ^= c.R[r]
 		c.R[F] = 0
 		if c.R[A] == 0 {
 			c.R[F] |= FlagZero
@@ -276,15 +315,18 @@ func bit(idx int, r Register) instruction {
 	}
 }
 
-func call(addr uint16) instruction {
-	return func(c *CPU) {
-		c.Debugf("exec call: push PC 0x%04X onto stack, jumping to 0x%04X\n", c.PC, addr)
-		lsb := byte(c.PC & 0xFF)
-		msb := byte(c.PC >> 8)
-		c.stackPush(lsb)
-		c.stackPush(msb)
-		c.PC = addr
-	}
+func call_a16(c *CPU) {
+	addr := func() uint16 {
+		lsb := c.readByte()
+		msb := c.readByte()
+		return toWord(msb, lsb)
+	}()
+	c.Debugf("exec call: push PC 0x%04X onto stack, jumping to 0x%04X\n", c.PC, addr)
+	lsb := byte(c.PC & 0xFF)
+	msb := byte(c.PC >> 8)
+	c.stackPush(lsb)
+	c.stackPush(msb)
+	c.PC = addr
 }
 
 func push(upper, lower Register) instruction {
