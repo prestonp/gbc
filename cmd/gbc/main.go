@@ -6,6 +6,7 @@ import (
 
 	_ "embed"
 
+	"github.com/faiface/pixel/pixelgl"
 	"github.com/prestonp/gbc/pkg/gb"
 	"github.com/prestonp/gbc/pkg/gb/apu"
 	"github.com/prestonp/gbc/pkg/gb/gpu"
@@ -33,7 +34,7 @@ func main() {
 	gpu := gpu.New()
 	apu := apu.New()
 	mmu := gb.NewMMU(boot, rom, gpu, apu)
-	cpu := gb.NewCPU(mmu, *debug)
+	cpu := gb.NewCPU(mmu, gpu, *debug)
 
-	cpu.Run()
+	pixelgl.Run(cpu.Run)
 }

@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"log"
 	"strings"
+
+	"github.com/faiface/pixel"
+	"github.com/faiface/pixel/pixelgl"
 )
 
 type GPU struct {
@@ -145,4 +148,27 @@ func (g *GPU) ResetLY() {
 func (g *GPU) GetLY() byte {
 	return 0x94
 	// return g.ly
+}
+
+func (g *GPU) Loop(update func()) {
+	cfg := pixelgl.WindowConfig{
+		Title:  "gameboy",
+		Bounds: pixel.R(0, 0, 1024, 768),
+		// VSync:  true,
+	}
+
+	win, err := pixelgl.NewWindow(cfg)
+	if err != nil {
+		panic(err)
+	}
+
+	for !win.Closed() {
+		update()
+		g.render()
+		win.Update()
+	}
+}
+
+func (g *GPU) render() {
+
 }

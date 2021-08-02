@@ -87,13 +87,14 @@ func (c *CPU) Debugf(s string, args ...interface{}) {
 	fmt.Fprintf(c.log, "[debug] "+s, args...)
 }
 
-func NewCPU(mmu *MMU, debug bool) *CPU {
+func NewCPU(mmu *MMU, gpu GPU, debug bool) *CPU {
 	return &CPU{
 		SP: 0x0,
 		PC: 0x0,
 
 		R:     make([]uint8, 8),
 		MMU:   mmu,
+		GPU:   gpu,
 		debug: debug,
 
 		log: logbuf.New(1024),
@@ -121,6 +122,10 @@ func (c *CPU) String() string {
 }
 
 func (c *CPU) Run() {
+	c.GPU.Loop(c.Update)
+}
+
+func (c *CPU) Update() {
 	defer func() {
 		if r := recover(); r != nil {
 			fmt.Println(c.log.String())
@@ -128,17 +133,14 @@ func (c *CPU) Run() {
 		}
 	}()
 
-	for i := 0; ; i++ {
-		c.Debugf("%d ........\n", i)
-		c.resolveInterruptToggle()
-		op := c.fetch()
-		exec := c.decode(op)
-		exec(c)
-		c.Debugf("%s\n", c)
+	c.resolveInterruptToggle()
+	op := c.fetch()
+	exec := c.decode(op)
+	exec(c)
+	c.Debugf("%s\n", c)
 
-		if c.PC == 0x2817 {
-			panic("STOP LOADING TILE DATA")
-		}
+	if c.PC == 0x2817 {
+		panic("STOP LOADING TILE DATA")
 	}
 }
 
@@ -442,9 +444,11 @@ type GPU interface {
 
 	GetLY() byte
 	ResetLY()
-
 	// todo: deprecate above methods and just rely on Module interface
 	Module
+
+	// Loop sets up graphics and runs the game loop, calling the update function on each tick
+	Loop(update func())
 }
 
 // Module represents another memory mapped module such as the GPU or APU
