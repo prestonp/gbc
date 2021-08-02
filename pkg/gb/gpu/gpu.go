@@ -10,6 +10,7 @@ import (
 )
 
 type GPU struct {
+	vram []byte
 	scx  byte
 	scy  byte
 	stat byte
@@ -35,25 +36,50 @@ func (g *GPU) String() string {
 	fmt.Fprintf(&b, "\tscy: %d\n", g.scy)
 	fmt.Fprintf(&b, "\tlcdc y: %d\n", g.ly)
 	fmt.Fprintf(&b, "\tlcd status: %08b\n", g.stat)
-	fmt.Fprintf(&b, "\tlcd control: %08b\n", g.GetControl())
+	fmt.Fprintf(&b, "\tlcd control: %08b\n", g.getControl())
 	return b.String()
 }
 
-func (g *GPU) SetRegister(addr uint16, b byte) {
+func (g *GPU) WriteByte(addr uint16, b byte) {
 	switch {
+	case addr >= 0x8000 && addr <= 0x9FFF:
+		g.vram[addr-0x8000] = b
+	case addr == 0xFF40:
+		// LCD Control
+		g.setControl(b)
+	case addr == 0xFF41:
+		g.setStat(b & 0xF8)
+	case addr == 0xFF42:
+		g.setScrollY(b)
+	case addr == 0xFF43:
+		g.setScrollX(b)
+	case addr == 0xFF44:
+		g.resetLY()
 	case addr == 0xFF47:
 		g.bgp = b
 	default:
-		log.Panicf("unimplemented gpu register 0x%04X = 0x%02X\n", addr, b)
+		log.Panicf("unimplemented write gpu addr 0x%04X = 0x%02X\n", addr, b)
 	}
 }
 
-func (g *GPU) GetRegister(addr uint16) byte {
+func (g *GPU) ReadByte(addr uint16) byte {
 	switch {
+	case addr >= 0x8000 && addr <= 0x9FFF:
+		return g.vram[addr-0x8000]
+	case addr == 0xFF40:
+		return g.getControl()
+	case addr == 0xFF41:
+		return g.getStat()
+	case addr == 0xFF42:
+		return g.getScrollY()
+	case addr == 0xFF43:
+		return g.getScrollX()
+	case addr == 0xFF44:
+		return g.getLY()
 	case addr == 0xFF47:
 		return g.bgp
 	default:
-		log.Panicf("unimplemented gpu register 0x%04X\n", addr)
+		log.Panicf("unimplemented read gpu addr 0x%04X\n", addr)
 	}
 	panic("unexpected gpu failure")
 }
@@ -74,34 +100,36 @@ func (g *GPU) getPalette(d Dot) byte {
 }
 
 func New() *GPU {
-	return &GPU{}
+	return &GPU{
+		vram: make([]byte, 8*1024),
+	}
 }
 
-func (g *GPU) SetScrollX(x byte) {
+func (g *GPU) setScrollX(x byte) {
 	g.scx = x
 }
 
-func (g *GPU) GetScrollX() byte {
+func (g *GPU) getScrollX() byte {
 	return g.scx
 }
 
-func (g *GPU) SetScrollY(y byte) {
+func (g *GPU) setScrollY(y byte) {
 	g.scy = y
 }
 
-func (g *GPU) GetScrollY() byte {
+func (g *GPU) getScrollY() byte {
 	return g.scy
 }
 
-func (g *GPU) SetStat(s byte) {
+func (g *GPU) setStat(s byte) {
 	g.stat = s
 }
 
-func (g *GPU) GetStat() byte {
+func (g *GPU) getStat() byte {
 	return g.stat
 }
 
-func (g *GPU) SetControl(b byte) {
+func (g *GPU) setControl(b byte) {
 	g.lcdEnable = b&(1<<7) > 0
 	g.winTileMapArea = b&(1<<6) > 0
 	g.winEnable = b&(1<<5) > 0
@@ -112,7 +140,7 @@ func (g *GPU) SetControl(b byte) {
 	g.bgAndWinEnablePriority = b&1 > 0
 }
 
-func (g *GPU) GetControl() byte {
+func (g *GPU) getControl() byte {
 	var b byte
 	if g.lcdEnable {
 		b |= 1 << 7
@@ -141,11 +169,11 @@ func (g *GPU) GetControl() byte {
 	return b
 }
 
-func (g *GPU) ResetLY() {
+func (g *GPU) resetLY() {
 	g.ly = 0
 }
 
-func (g *GPU) GetLY() byte {
+func (g *GPU) getLY() byte {
 	return 0x94
 	// return g.ly
 }
@@ -180,8 +208,6 @@ func (g *GPU) renderBackground() {
 	// which tile map to use? 0x9800-0x9BFF or 0x9C00-0x9FF?
 
 	// read tile map into 32x32 byte array
-
-	//
 }
 
 func (g *GPU) renderWindow() {

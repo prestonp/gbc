@@ -62,7 +62,7 @@ type CPU struct {
 	T int // instruction clock
 
 	MMU *MMU
-	GPU GPU
+	GPU Module
 
 	debug bool
 
@@ -88,7 +88,7 @@ func (c *CPU) Debugf(s string, args ...interface{}) {
 	fmt.Fprintf(c.log, "[debug] "+s, args...)
 }
 
-func NewCPU(mmu *MMU, gpu GPU, debug bool) *CPU {
+func NewCPU(mmu *MMU, gpu Module, debug bool) *CPU {
 	return &CPU{
 		SP: 0x0,
 		PC: 0x0,
@@ -290,31 +290,11 @@ func toWord(a, b uint8) uint16 {
 	return uint16(a)<<8 | uint16(b)
 }
 
-type GPU interface {
-	GetScrollY() byte
-	SetScrollY(y byte)
-
-	GetScrollX() byte
-	SetScrollX(x byte)
-
-	SetStat(s byte)
-	GetStat() byte
-
-	SetControl(c byte)
-	GetControl() byte
-
-	GetLY() byte
-	ResetLY()
-	// todo: deprecate above methods and just rely on Module interface
-	Module
-
-	Run()
-}
-
 // Module represents another memory mapped module such as the GPU or APU
 type Module interface {
-	GetRegister(addr uint16) byte
-	SetRegister(addr uint16, b byte)
+	ReadByte(addr uint16) byte
+	WriteByte(addr uint16, b byte)
+	Run()
 }
 
 func (c *CPU) stackPush(b byte) {

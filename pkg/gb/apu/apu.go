@@ -15,7 +15,7 @@ func New() *APU {
 	return &APU{}
 }
 
-func (a *APU) SetRegister(addr uint16, b byte) {
+func (a *APU) WriteByte(addr uint16, b byte) {
 	switch {
 	case addr == 0xFF10:
 		a.nr10 = b & 0x7F
@@ -34,7 +34,7 @@ func (a *APU) SetRegister(addr uint16, b byte) {
 	}
 }
 
-func (a *APU) GetRegister(addr uint16) byte {
+func (a *APU) ReadByte(addr uint16) byte {
 	switch {
 	case addr == 0xFF10:
 		return a.nr10
@@ -53,6 +53,10 @@ func (a *APU) GetRegister(addr uint16) byte {
 	}
 	log.Panicf("unexpected sound controller failure")
 	return 0
+}
+
+func (a *APU) Run() {
+	log.Panicf("apu.Run not implemented, check if this requires handling timing")
 }
 
 // 000: sweep off - no freq change 001: 7.8 ms (1/128Hz)

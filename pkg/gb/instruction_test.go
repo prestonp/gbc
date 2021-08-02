@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/prestonp/gbc/pkg/gb/apu"
+	"github.com/prestonp/gbc/pkg/gb/gpu"
 	"github.com/stretchr/testify/require"
 )
 
@@ -21,8 +22,9 @@ func TestAddSignedByte(t *testing.T) {
 
 func TestBit(t *testing.T) {
 	apu := apu.New()
+	gpu := gpu.New()
 	mmu := NewMMU(nil, nil, nil, apu)
-	cpu := NewCPU(mmu, false)
+	cpu := NewCPU(mmu, gpu, false)
 
 	t.Run("check specific bit in a register", func(t *testing.T) {
 		cpu.R[H] = 0x80
@@ -41,7 +43,7 @@ func TestBit(t *testing.T) {
 }
 
 func TestInc(t *testing.T) {
-	cpu := NewCPU(nil, false)
+	cpu := NewCPU(nil, gpu.New(), false)
 	cpu.R[C] = 0xF
 	inc := inc_reg(C)
 	inc(cpu)
@@ -58,7 +60,7 @@ func TestInc(t *testing.T) {
 
 func TestRotate(t *testing.T) {
 	t.Run("rl reg", func(t *testing.T) {
-		cpu := NewCPU(nil, false)
+		cpu := NewCPU(nil, gpu.New(), false)
 		rotate := rl_reg(B)
 		{
 			cpu.R[B] = 0x80

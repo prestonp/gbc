@@ -8,7 +8,7 @@ import (
 
 func TestDot(t *testing.T) {
 	gpu := New()
-	gpu.SetRegister(0xFF47, 0xFC)
+	gpu.WriteByte(0xFF47, 0xFC)
 
 	require.EqualValues(t, 0b11, gpu.getPalette(DotDarker))
 	require.EqualValues(t, 0b11, gpu.getPalette(DotDark))
