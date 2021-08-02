@@ -169,5 +169,25 @@ func (g *GPU) Run() {
 }
 
 func (g *GPU) render() {
+	g.renderBackground()
+	g.renderWindow()
+	g.renderSprites()
+}
+
+func (g *GPU) renderBackground() {
+	// is bg turned on?
+
+	// which tile map to use? 0x9800-0x9BFF or 0x9C00-0x9FF?
+
+	// read tile map into 32x32 byte array
+
+	//
+}
+
+func (g *GPU) renderWindow() {
+
+}
+
+func (g *GPU) renderSprites() {
 
 }

@@ -227,7 +227,10 @@ var ops = map[byte]instruction{
 	0x47: build(label("LD B, A"), ld_reg_reg(B, A)),
 	0x4F: build(label("LD C, A"), ld_reg_reg(C, A)),
 
+	0x57: build(label("LD D, A"), ld_reg_reg(D, A)),
+
 	0x61: build(label("LD H, C"), ld_reg_reg(H, C)),
+	0x67: build(label("LD H, A"), ld_reg_reg(H, A)),
 
 	0x77: build(label("LD (HL), A"), ld_addrhl_reg(A)),
 	0x7B: build(label("LD A, E"), ld_reg_reg(A, E)),
