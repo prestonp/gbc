@@ -86,19 +86,22 @@ func (g *GPU) ReadByte(addr uint16) byte {
 	panic("unexpected gpu failure")
 }
 
-type Dot byte
-
-const (
-	DotLighter Dot = iota
-	DotLight
-	DotDark
-	DotDarker
-)
-
-func (g *GPU) getPalette(d Dot) byte {
-	offset := 2 * d
-	color := (g.bgp >> offset)
-	return color & 0b11
+func (g *GPU) getColor(idx byte) color.Color {
+	offset := 2 * idx
+	c := (g.bgp >> offset) & 0b11
+	switch c {
+	case 0:
+		return color.White
+	case 1:
+		return color.RGBA{128, 128, 128, 255}
+	case 2:
+		return color.RGBA{192, 192, 192, 255}
+	case 3:
+		return color.Black
+	default:
+		log.Panicf("unknown color %d", c)
+		return color.White
+	}
 }
 
 func New() *GPU {
@@ -282,19 +285,7 @@ func (g *GPU) At(x, y int) color.Color {
 
 	colorID := tileData[tileY*8+tileX]
 
-	// todo: use the color palette
-	switch colorID {
-	case 0:
-		return color.RGBA{255, 255, 255, 255}
-	case 1:
-		return color.RGBA{150, 150, 150, 255}
-	case 2:
-		return color.RGBA{50, 50, 50, 255}
-	case 3:
-		return color.RGBA{0, 0, 0, 255}
-	default:
-		panic("unknown color id")
-	}
+	return g.getColor(colorID)
 }
 
 func (g *GPU) Bounds() image.Rectangle {

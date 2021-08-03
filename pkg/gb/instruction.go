@@ -164,23 +164,6 @@ func cp_byte(c *CPU) {
 	c.Debugf("exec cp d8 (0x%02X) flags = 0b%04b\n", b, c.R[F]>>4)
 }
 
-func dec_a16(addr uint16) instruction {
-	return func(c *CPU) {
-		panic("reimplement this")
-		// c.Debugf("TEMP %s\n", c.String())
-		// val := c.MMU.ReadByte(addr) - 1
-		// c.MMU.WriteByte(addr, val)
-
-		// c.R[F] = 0
-		// if val == 0 {
-		// 	c.R[F] |= FlagZero
-		// }
-		// c.R[F] |= FlagSubtract
-
-		// c.Debugf("todo: implement half carry flag in CP instructions\n")
-	}
-}
-
 func dec_nn(upper, lower Register) instruction {
 	return func(c *CPU) {
 		word := toWord(c.R[upper], c.R[lower]) - 1
