@@ -3,6 +3,8 @@ package apu
 import (
 	"fmt"
 	"log"
+
+	"github.com/prestonp/gbc/pkg/gb"
 )
 
 type APU struct {
@@ -66,7 +68,7 @@ func (a *APU) ReadByte(addr uint16) byte {
 	return 0
 }
 
-func (a *APU) Run() {
+func (a *APU) Run(debugger gb.Debugger) {
 	log.Panicf("apu.Run not implemented, check if this requires handling timing")
 }
 

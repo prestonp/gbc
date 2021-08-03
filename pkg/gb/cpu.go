@@ -10,6 +10,10 @@ import (
 	"github.com/prestonp/gbc/pkg/logbuf"
 )
 
+type Debugger interface {
+	String() string
+}
+
 type Register uint8
 
 const (
@@ -138,7 +142,7 @@ func (c *CPU) Run() {
 		}
 	}()
 
-	c.GPU.Run()
+	c.GPU.Run(c)
 }
 
 func (c *CPU) Update() {
@@ -319,7 +323,7 @@ func toWord(a, b uint8) uint16 {
 type Module interface {
 	ReadByte(addr uint16) byte
 	WriteByte(addr uint16, b byte)
-	Run()
+	Run(debugger Debugger)
 }
 
 func (c *CPU) stackPush(b byte) {

@@ -9,9 +9,14 @@ import (
 
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/pixelgl"
+	"github.com/faiface/pixel/text"
+	"github.com/prestonp/gbc/pkg/gb"
+	"golang.org/x/image/font/basicfont"
 )
 
 type GPU struct {
+	showDebugger bool
+
 	vram []byte
 	scx  byte
 	scy  byte
@@ -183,7 +188,7 @@ func (g *GPU) getLY() byte {
 	// return g.ly
 }
 
-func (g *GPU) Run() {
+func (g *GPU) Run(debugger gb.Debugger) {
 	cfg := pixelgl.WindowConfig{
 		Title:  "gameboy",
 		Bounds: pixel.R(0, 0, 1024, 768),
@@ -196,24 +201,44 @@ func (g *GPU) Run() {
 	}
 
 	for !win.Closed() {
-		g.render(win)
+		g.handleInput(win)
+		g.render(win, debugger)
 		win.Update()
 	}
 }
 
-func (g *GPU) render(win *pixelgl.Window) {
+func (g *GPU) handleInput(win *pixelgl.Window) {
+	if win.JustPressed(pixelgl.KeyGraveAccent) {
+		g.showDebugger = !g.showDebugger
+	}
+}
+
+func (g *GPU) render(win *pixelgl.Window, debugger gb.Debugger) {
+	win.Clear(color.Black)
 	g.renderBackground(win)
 	g.renderWindow(win)
 	g.renderSprites(win)
+	g.renderDebugger(win, debugger)
+}
+
+func (g *GPU) renderDebugger(win *pixelgl.Window, debugger gb.Debugger) {
+	if !g.showDebugger {
+		return
+	}
+
+	basicAtlas := text.NewAtlas(basicfont.Face7x13, text.ASCII)
+	padding := float64(100)
+	topLeft := pixel.Vec{
+		X: win.Bounds().Min.X + padding,
+		Y: win.Bounds().Max.Y - padding,
+	}
+	txt := text.New(topLeft, basicAtlas)
+	fmt.Fprintln(txt, debugger.String())
+	txt.Draw(win, pixel.IM)
 }
 
 func (g *GPU) renderBackground(win *pixelgl.Window) {
 	if !g.lcdEnable {
-		return
-	}
-
-	if !g.bgAndWinEnablePriority {
-		win.Clear(color.White)
 		return
 	}
 
@@ -260,6 +285,10 @@ func (g *GPU) readTile(addrMode uint16, idx byte) []byte {
 var _ image.Image = &GPU{}
 
 func (g *GPU) At(x, y int) color.Color {
+	if !g.bgAndWinEnablePriority {
+		return color.White
+	}
+
 	x += int(g.getScrollX())
 	y += int(g.getScrollY())
 
