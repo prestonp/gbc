@@ -82,7 +82,7 @@ func ld_sp_word(c *CPU) {
 func ld_reg_reg(dst, src Register) instruction {
 	return func(c *CPU) {
 		c.R[dst] = c.R[src]
-		c.Debugf("exec ld %s %s\n", dst, src)
+		c.Debugf("exec LD %s 0x%02X\n", dst, c.R[src])
 	}
 }
 
@@ -148,8 +148,9 @@ func ldh_reg_a8(dest Register) instruction {
 		c.Debugf("exec ldh %s %02X\n", dest, c.R[dest])
 	}
 }
-func cp_byte(c *CPU) {
-	b := c.readByte()
+
+// helper func to compare register A to a byte
+func _compare(b byte, c *CPU) {
 	c.R[F] = 0
 	if c.R[A] == b {
 		c.R[F] |= FlagZero
@@ -162,6 +163,15 @@ func cp_byte(c *CPU) {
 	}
 	c.R[F] |= FlagSubtract
 	c.Debugf("exec cp d8 (0x%02X) flags = 0b%04b\n", b, c.R[F]>>4)
+}
+
+func cp_byte(c *CPU) {
+	_compare(c.readByte(), c)
+}
+
+func cp_hl(c *CPU) {
+	addr := toWord(c.R[H], c.R[L])
+	_compare(c.MMU.ReadByte(addr), c)
 }
 
 func dec_nn(upper, lower Register) instruction {
@@ -198,6 +208,10 @@ func dec_reg(r Register) instruction {
 
 func halfCarryAdd(a, b byte) bool {
 	return (a&0xF+b&0xF)&0x10 == 0x10
+}
+
+func fullCarryAdd(a, b byte) bool {
+	return (uint16(a)+uint16(b))&0x100 == 0x100
 }
 
 func inc_reg(r Register) instruction {
@@ -386,4 +400,39 @@ func sub(r Register) instruction {
 
 		c.R[A] = diff
 	}
+}
+
+// helper func to add a byte to register A
+func _add(c *CPU, b byte) {
+	sum := c.R[A] + b
+
+	c.R[F] = 0
+	if sum == 0 {
+		c.R[F] |= FlagZero
+	}
+
+	if halfCarryAdd(c.R[A], b) {
+		c.R[F] |= FlagHalfCarry
+	}
+
+	if fullCarryAdd(c.R[A], b) {
+		c.R[F] |= FlagCarry
+	}
+
+	c.R[A] = sum
+}
+
+func add_reg(r Register) instruction {
+	return func(c *CPU) {
+		_add(c, c.R[r])
+	}
+}
+
+func add_hl(c *CPU) {
+	addr := toWord(c.R[H], c.R[L])
+	_add(c, c.MMU.ReadByte(addr))
+}
+
+func add_d8(c *CPU) {
+	_add(c, c.readByte())
 }

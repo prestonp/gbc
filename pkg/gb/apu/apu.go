@@ -27,9 +27,9 @@ func (a *APU) WriteByte(addr uint16, b byte) {
 	case addr == 0xFF12:
 		a.nr12 = b
 	case addr == 0xFF13:
-		fmt.Println("warning: 0xFF13 not implemented")
+		fmt.Println("warning: write 0xFF13 not implemented")
 	case addr == 0xFF14:
-		fmt.Println("warning: 0xFF14 not implemented")
+		fmt.Println("warning: write 0xFF14 not implemented")
 	case addr == 0xFF24:
 		a.nr50 = b
 	case addr == 0xFF25:
@@ -49,6 +49,10 @@ func (a *APU) ReadByte(addr uint16) byte {
 		return a.nr11
 	case addr == 0xFF12:
 		return a.nr12
+	case addr == 0xFF13:
+		log.Panicf("read 0xFF13 not implemented")
+	case addr == 0xFF14:
+		log.Panicf("read 0xFF14 not implemented")
 	case addr == 0xFF24:
 		return a.nr50
 	case addr == 0xFF25:

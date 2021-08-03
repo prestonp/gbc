@@ -20,15 +20,16 @@ func (bf ByteFlag) String() string {
 }
 
 type MMU struct {
-	boot []byte
-	rom  []byte
-	wram []byte
-	hram []byte
-	IF   ByteFlag
-	IE   ByteFlag
-	SB   byte
-	SC   byte
-	BGP  byte // background and window palette
+	booted bool // $00-$FF point to cartridge after booting
+	boot   []byte
+	rom    []byte
+	wram   []byte
+	hram   []byte
+	IF     ByteFlag
+	IE     ByteFlag
+	SB     byte
+	SC     byte
+	BGP    byte // background and window palette
 
 	gpu Module
 	apu Module
@@ -53,7 +54,7 @@ func ReadRom(path string) ([]byte, error) {
 func (m *MMU) ReadByte(a uint16) byte {
 	switch {
 	case a >= 0x0000 && a < 0x8000:
-		if a <= 0xFF {
+		if a <= 0xFF && !m.booted {
 			return m.boot[a]
 		}
 		return m.rom[a]
@@ -113,6 +114,8 @@ func (m *MMU) WriteByte(a uint16, n uint8) {
 		m.apu.WriteByte(a, n)
 	case a >= 0xFF40 && a <= 0xFF47:
 		m.gpu.WriteByte(a, n)
+	case a == 0xFF50:
+		m.booted = n != 0
 	case a >= 0xFF80 && a < 0xFFFF:
 		// high ram
 		m.hram[a-0xFF80] = n

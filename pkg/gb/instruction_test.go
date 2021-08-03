@@ -120,3 +120,34 @@ func TestSub(t *testing.T) {
 		require.EqualValues(t, 0xFF, cpu.R[A])
 	}
 }
+
+func TestAdd(t *testing.T) {
+	cpu := NewCPU(nil, gpu.New(), false)
+	{
+		cpu.R[A] = 0x08
+		_add(cpu, 0x08)
+		require.EqualValues(t, 0x10, cpu.R[A])
+		require.EqualValues(t, 0, cpu.R[F]&FlagZero)
+		require.EqualValues(t, 0, cpu.R[F]&FlagSubtract)
+		require.EqualValues(t, FlagHalfCarry, cpu.R[F]&FlagHalfCarry)
+		require.EqualValues(t, 0, cpu.R[F]&FlagCarry)
+	}
+	{
+		cpu.R[A] = 0xFF
+		_add(cpu, 0x01)
+		require.EqualValues(t, 0, cpu.R[A])
+		require.EqualValues(t, FlagZero, cpu.R[F]&FlagZero)
+		require.EqualValues(t, 0, cpu.R[F]&FlagSubtract)
+		require.EqualValues(t, FlagHalfCarry, cpu.R[F]&FlagHalfCarry)
+		require.EqualValues(t, FlagCarry, cpu.R[F]&FlagCarry)
+	}
+	{
+		cpu.R[A] = 0x80
+		_add(cpu, 0x80)
+		require.EqualValues(t, 0, cpu.R[A])
+		require.EqualValues(t, FlagZero, cpu.R[F]&FlagZero)
+		require.EqualValues(t, 0, cpu.R[F]&FlagSubtract)
+		require.EqualValues(t, 0, cpu.R[F]&FlagHalfCarry)
+		require.EqualValues(t, FlagCarry, cpu.R[F]&FlagCarry)
+	}
+}

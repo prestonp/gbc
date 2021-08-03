@@ -180,11 +180,11 @@ func (c *CPU) fetch() byte {
 	c.Debugf("fetched 0x%02X\n", op)
 
 	// todo: remove temporary breakpoint
-	if op == 0xBE {
-		fmt.Println("debugging breakpoint to let gpu render a frame")
-		fmt.Println(c)
-		time.Sleep(1 * time.Minute)
-	}
+	// if op == 0xBE {
+	// 	fmt.Println("debugging breakpoint to let gpu render a frame")
+	// 	fmt.Println(c)
+	// 	time.Sleep(1 * time.Minute)
+	// }
 	return op
 }
 
@@ -249,13 +249,19 @@ var ops = map[byte]instruction{
 	0x67: build(label("LD H, A"), ld_reg_reg(H, A)),
 
 	0x77: build(label("LD (HL), A"), ld_addrhl_reg(A)),
+	0x78: build(label("LD A, B"), ld_reg_reg(A, B)),
 	0x7B: build(label("LD A, E"), ld_reg_reg(A, E)),
 	0x7C: build(label("LD A, H"), ld_reg_reg(A, H)),
+	0x7D: build(label("LD A, L"), ld_reg_reg(A, L)),
+
+	0x86: build(label("ADD A, (HL)"), add_hl),
 
 	0x90: build(label("SUB B"), sub(B)),
 
 	0xA7: build(label("AND A"), and_reg(A)),
 	0xAF: build(label("XOR A"), xor_reg(A)),
+
+	0xBE: build(label("CP (HL)"), cp_hl),
 
 	0xC1: build(label("POP BC"), pop(B, C)),
 	0xC5: build(label("PUSH BC"), push(B, C)),
