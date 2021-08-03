@@ -2,6 +2,8 @@ package gpu
 
 import (
 	"fmt"
+	"image"
+	"image/color"
 	"log"
 	"strings"
 
@@ -191,29 +193,117 @@ func (g *GPU) Run() {
 	}
 
 	for !win.Closed() {
-		g.render()
+		g.render(win)
 		win.Update()
 	}
 }
 
-func (g *GPU) render() {
-	g.renderBackground()
-	g.renderWindow()
-	g.renderSprites()
+func (g *GPU) render(win *pixelgl.Window) {
+	g.renderBackground(win)
+	g.renderWindow(win)
+	g.renderSprites(win)
 }
 
-func (g *GPU) renderBackground() {
-	// is bg turned on?
+func (g *GPU) renderBackground(win *pixelgl.Window) {
+	if !g.lcdEnable {
+		return
+	}
 
-	// which tile map to use? 0x9800-0x9BFF or 0x9C00-0x9FF?
+	if !g.bgAndWinEnablePriority {
+		win.Clear(color.White)
+		return
+	}
 
-	// read tile map into 32x32 byte array
+	pic := pixel.PictureDataFromImage(g)
+	sprite := pixel.NewSprite(pic, pic.Bounds())
+	sprite.Draw(win, pixel.IM.Moved(win.Bounds().Center()))
 }
 
-func (g *GPU) renderWindow() {
+func (g *GPU) renderWindow(win *pixelgl.Window) {
 
 }
 
-func (g *GPU) renderSprites() {
+func (g *GPU) renderSprites(win *pixelgl.Window) {
 
+}
+
+// read a tile into a byte slice storing the color IDs. The color IDs must
+// refer to palette to produce actual colors. The slice is flat, but is indexed
+// in row, col order.
+func (g *GPU) readTile(addrMode uint16, idx byte) []byte {
+	if addrMode == 0x8800 {
+		log.Panicf("0x8800 addr mode not implemented")
+	}
+
+	baseAddr := addrMode + uint16(idx)*16
+
+	var b []byte
+
+	// read 16 bytes, each pair represents a line, refer to gb spec/docs for encoding
+	for row := uint16(0); row < 8; row++ {
+		lower := g.ReadByte(baseAddr + (row * 2))
+		upper := g.ReadByte(baseAddr + (row*2 + 1))
+
+		for col := 0; col < 8; col++ {
+			offset := 7 - col
+			mask := byte(1 << offset)
+			colorId := upper&mask>>(offset+1) | (lower&mask)>>offset
+			b = append(b, colorId)
+		}
+	}
+	return b
+}
+
+var _ image.Image = &GPU{}
+
+func (g *GPU) At(x, y int) color.Color {
+	tileR := y / 8
+	tileC := x / 8
+
+	tileIdx := tileR*32 + tileC
+
+	addrMode := func() uint16 {
+		if g.bgAndWinTileDataArea {
+			return 0x8000
+		}
+		return 0x8800
+	}()
+
+	tileMapOffset := uint16(0x9800)
+	if g.bgTileMapArea {
+		tileMapOffset = 0x9C00
+	}
+	tileAddr := tileMapOffset + uint16(tileIdx)
+	tileID := g.ReadByte(tileAddr)
+	tileData := g.readTile(addrMode, tileID)
+
+	tileX := x % 8
+	tileY := y % 8
+
+	colorID := tileData[tileY*8+tileX]
+
+	// todo: use the color palette
+	switch colorID {
+	case 0:
+		return color.RGBA{255, 255, 255, 255}
+	case 1:
+		return color.RGBA{150, 150, 150, 255}
+	case 2:
+		return color.RGBA{50, 50, 50, 255}
+	case 3:
+		return color.RGBA{0, 0, 0, 255}
+	default:
+		panic("unknown color id")
+	}
+}
+
+func (g *GPU) Bounds() image.Rectangle {
+	return image.Rectangle{
+		Min: image.Point{0, 0},
+		Max: image.Point{255, 255},
+	}
+}
+
+func (g *GPU) ColorModel() color.Model {
+	return color.RGBAModel
 }

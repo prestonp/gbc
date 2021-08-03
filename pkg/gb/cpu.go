@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/prestonp/gbc/pkg/logbuf"
 )
@@ -175,6 +176,12 @@ func (c *CPU) resolveInterruptToggle() {
 func (c *CPU) fetch() byte {
 	op := c.readByte()
 	c.Debugf("fetched 0x%02X\n", op)
+
+	// todo: remove this once timing is implemented
+	if op == 0x04 {
+		c.Debugf("debugging breakpoint to let gpu render a frame")
+		time.Sleep(1 * time.Minute)
+	}
 	return op
 }
 
