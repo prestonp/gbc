@@ -142,6 +142,8 @@ func (c *CPU) Run() {
 }
 
 func (c *CPU) Update() {
+	// todo remove artificial delay
+	time.Sleep(50 * time.Microsecond)
 	defer func() {
 		if r := recover(); r != nil {
 			fmt.Println(c.log.String())
@@ -177,9 +179,10 @@ func (c *CPU) fetch() byte {
 	op := c.readByte()
 	c.Debugf("fetched 0x%02X\n", op)
 
-	// todo: remove this once timing is implemented
-	if op == 0x04 {
-		c.Debugf("debugging breakpoint to let gpu render a frame")
+	// todo: remove temporary breakpoint
+	if op == 0xBE {
+		fmt.Println("debugging breakpoint to let gpu render a frame")
+		fmt.Println(c)
 		time.Sleep(1 * time.Minute)
 	}
 	return op
@@ -207,6 +210,7 @@ var extendedOps = map[byte]instruction{
 
 var ops = map[byte]instruction{
 	0x00: build(label("noop"), noop),
+	0x04: build(label("INC B"), inc_reg(B)),
 	0x05: build(label("DEC B"), dec_reg(B)),
 	0x06: build(label("LD B, d8"), ld_reg_d8(B)),
 	0x0C: build(label("INC C"), inc_reg(C)),
@@ -214,15 +218,20 @@ var ops = map[byte]instruction{
 	0x0E: build(label("LD C, d8"), ld_reg_d8(C)),
 
 	0x11: build(label("LD DE, d16"), ld_word(D, E)),
+	0x13: build(label("INC DE"), inc_nn(D, E)),
+	0x15: build(label("DEC D"), dec_reg(D)),
+	0x16: build(label("LD D, d8"), ld_reg_d8(D)),
 	0x17: build(label("RLA"), rl_reg(A)),
 	0x18: build(label("JR r8"), jr_r8),
 	0x1A: build(label("LD A, (DE)"), ld_reg_word(A, D, E)),
-	0x13: build(label("INC DE"), inc_nn(D, E)),
+	0x1D: build(label("DEC E"), dec_reg(E)),
+	0x1E: build(label("LD E, d8"), ld_reg_d8(E)),
 
 	0x20: build(label("JR NZ, r8"), jr_nz_r8),
 	0x21: build(label("ld HL, d16"), ld_word(H, L)),
 	0x22: build(label("LD (HL+), A"), ldi_hl_reg(A)),
 	0x23: build(label("INC HL"), inc_nn(H, L)),
+	0x24: build(label("INC H"), inc_reg(H)),
 	0x28: build(label("JR Z, r8"), jr_z_r8),
 	0x2E: build(label("LD L, d8"), ld_reg_d8(L)),
 
@@ -241,6 +250,9 @@ var ops = map[byte]instruction{
 
 	0x77: build(label("LD (HL), A"), ld_addrhl_reg(A)),
 	0x7B: build(label("LD A, E"), ld_reg_reg(A, E)),
+	0x7C: build(label("LD A, H"), ld_reg_reg(A, H)),
+
+	0x90: build(label("SUB B"), sub(B)),
 
 	0xA7: build(label("AND A"), and_reg(A)),
 	0xAF: build(label("XOR A"), xor_reg(A)),

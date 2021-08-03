@@ -179,7 +179,7 @@ func (g *GPU) resetLY() {
 }
 
 func (g *GPU) getLY() byte {
-	return 0x94
+	return 0x90 // hack: 0x90 to unblock boot rom, 0x94 to unblock tetris, this is fixed when ly register is implemented
 	// return g.ly
 }
 
@@ -260,6 +260,17 @@ func (g *GPU) readTile(addrMode uint16, idx byte) []byte {
 var _ image.Image = &GPU{}
 
 func (g *GPU) At(x, y int) color.Color {
+	x += int(g.getScrollX())
+	y += int(g.getScrollY())
+
+	if x >= 256 {
+		x %= 256
+	}
+
+	if y >= 256 {
+		y %= 256
+	}
+
 	tileR := y / 8
 	tileC := x / 8
 
@@ -291,7 +302,7 @@ func (g *GPU) At(x, y int) color.Color {
 func (g *GPU) Bounds() image.Rectangle {
 	return image.Rectangle{
 		Min: image.Point{0, 0},
-		Max: image.Point{255, 255},
+		Max: image.Point{159, 143},
 	}
 }
 

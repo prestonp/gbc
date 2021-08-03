@@ -364,3 +364,26 @@ func ret(c *CPU) {
 	c.PC = toWord(msb, lsb)
 	c.Debugf("exec RET - PC jumping to 0x%04X\n", c.PC)
 }
+
+func sub(r Register) instruction {
+	return func(c *CPU) {
+		c.R[F] = 0
+
+		diff := c.R[A] - c.R[r]
+		if diff == 0 {
+			c.R[F] |= FlagZero
+		}
+
+		c.R[F] |= FlagSubtract
+
+		if diff&0xF <= c.R[A]&0xF {
+			c.R[F] |= FlagHalfCarry
+		}
+
+		if int(c.R[A])-int(c.R[r]) >= 0 {
+			c.R[F] |= FlagCarry
+		}
+
+		c.R[A] = diff
+	}
+}

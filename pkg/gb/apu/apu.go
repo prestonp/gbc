@@ -1,6 +1,9 @@
 package apu
 
-import "log"
+import (
+	"fmt"
+	"log"
+)
 
 type APU struct {
 	nr10 byte
@@ -23,6 +26,10 @@ func (a *APU) WriteByte(addr uint16, b byte) {
 		a.nr11 = b
 	case addr == 0xFF12:
 		a.nr12 = b
+	case addr == 0xFF13:
+		fmt.Println("warning: 0xFF13 not implemented")
+	case addr == 0xFF14:
+		fmt.Println("warning: 0xFF14 not implemented")
 	case addr == 0xFF24:
 		a.nr50 = b
 	case addr == 0xFF25:
@@ -30,7 +37,7 @@ func (a *APU) WriteByte(addr uint16, b byte) {
 	case addr == 0xFF26:
 		a.nr52 = b & 0x8F
 	default:
-		log.Panicf("unimplemented sound controller register 0x%04X = 0x%02X\n", addr, b)
+		log.Panicf("unimplemented write sound controller register 0x%04X = 0x%02X\n", addr, b)
 	}
 }
 
@@ -49,7 +56,7 @@ func (a *APU) ReadByte(addr uint16) byte {
 	case addr == 0xFF26:
 		return a.nr52
 	default:
-		log.Panicf("unimplemented sound controller register 0x%04X\n", addr)
+		log.Panicf("unimplemented read sound controller register 0x%04X\n", addr)
 	}
 	log.Panicf("unexpected sound controller failure")
 	return 0
