@@ -11,6 +11,11 @@ type APU struct {
 	nr10 byte
 	nr11 byte
 	nr12 byte
+	nr22 byte // channel 2 volume envelope
+	nr23 byte // channel 2 frequency lo data
+	nr24 byte // channel 2 frequency hi data
+	nr42 byte // channel 4 volume envelope
+	nr44 byte // channel 4 counter/consecutive; initial
 	nr50 byte // unimplemented
 	nr51 byte // unimplemented
 	nr52 byte
@@ -32,6 +37,16 @@ func (a *APU) WriteByte(addr uint16, b byte) {
 		fmt.Println("warning: write 0xFF13 not implemented")
 	case addr == 0xFF14:
 		fmt.Println("warning: write 0xFF14 not implemented")
+	case addr == 0xFF17:
+		a.nr22 = b
+	case addr == 0xFF18:
+		a.nr23 = b
+	case addr == 0xFF19:
+		a.nr24 = b
+	case addr == 0xFF21:
+		a.nr42 = b
+	case addr == 0xFF23:
+		a.nr44 = b
 	case addr == 0xFF24:
 		a.nr50 = b
 	case addr == 0xFF25:
@@ -55,6 +70,16 @@ func (a *APU) ReadByte(addr uint16) byte {
 		log.Panicf("read 0xFF13 not implemented")
 	case addr == 0xFF14:
 		log.Panicf("read 0xFF14 not implemented")
+	case addr == 0xFF17:
+		return a.nr22
+	case addr == 0xFF18:
+		return a.nr23
+	case addr == 0xFF19:
+		return a.nr24
+	case addr == 0xFF21:
+		return a.nr42
+	case addr == 0xFF23:
+		return a.nr44
 	case addr == 0xFF24:
 		return a.nr50
 	case addr == 0xFF25:

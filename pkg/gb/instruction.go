@@ -57,6 +57,13 @@ func ldi_hl_reg(r Register) instruction {
 	}
 }
 
+func ldi_reg_word(dst, upper, lower Register) instruction {
+	return func(c *CPU) {
+		ld_reg_word(dst, upper, lower)(c)
+		inc_nn(upper, lower)(c)
+	}
+}
+
 func ld_word(upper, lower Register) instruction {
 	return func(c *CPU) {
 		c.R[lower] = c.readByte()
@@ -440,4 +447,15 @@ func add_hl(c *CPU) {
 
 func add_d8(c *CPU) {
 	_add(c, c.readByte())
+}
+
+func or_reg(r Register) instruction {
+	return func(c *CPU) {
+		c.R[A] |= c.R[r]
+		if c.R[A] == 0 {
+			c.R[F] = FlagZero
+		} else {
+			c.R[F] = 0
+		}
+	}
 }

@@ -214,9 +214,11 @@ var extendedOps = map[byte]instruction{
 
 var ops = map[byte]instruction{
 	0x00: build(label("noop"), noop),
+	0x01: build(label("LD BC, d16"), ld_word(B, C)),
 	0x04: build(label("INC B"), inc_reg(B)),
 	0x05: build(label("DEC B"), dec_reg(B)),
 	0x06: build(label("LD B, d8"), ld_reg_d8(B)),
+	0x0B: build(label("DEC BC"), dec_nn(B, C)),
 	0x0C: build(label("INC C"), inc_reg(C)),
 	0x0D: build(label("DEC C"), dec_reg(C)),
 	0x0E: build(label("LD C, d8"), ld_reg_d8(C)),
@@ -232,11 +234,12 @@ var ops = map[byte]instruction{
 	0x1E: build(label("LD E, d8"), ld_reg_d8(E)),
 
 	0x20: build(label("JR NZ, r8"), jr_nz_r8),
-	0x21: build(label("ld HL, d16"), ld_word(H, L)),
+	0x21: build(label("LD HL, d16"), ld_word(H, L)),
 	0x22: build(label("LD (HL+), A"), ldi_hl_reg(A)),
 	0x23: build(label("INC HL"), inc_nn(H, L)),
 	0x24: build(label("INC H"), inc_reg(H)),
 	0x28: build(label("JR Z, r8"), jr_z_r8),
+	0x2A: build(label("LDI A, (HL)"), ldi_reg_word(A, H, L)),
 	0x2E: build(label("LD L, d8"), ld_reg_d8(L)),
 
 	0x31: build(label("LD SP, d16"), ld_sp_word),
@@ -266,6 +269,7 @@ var ops = map[byte]instruction{
 	0xA7: build(label("AND A"), and_reg(A)),
 	0xAF: build(label("XOR A"), xor_reg(A)),
 
+	0xB1: build(label("OR C"), or_reg(C)),
 	0xBE: build(label("CP (HL)"), cp_hl),
 
 	0xC1: build(label("POP BC"), pop(B, C)),
