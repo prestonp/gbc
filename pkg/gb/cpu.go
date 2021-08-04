@@ -241,6 +241,7 @@ var ops = map[byte]instruction{
 
 	0x31: build(label("LD SP, d16"), ld_sp_word),
 	0x32: build(label("LD (HL-), A"), ldd_hl_reg(A)),
+	0x36: build(label("LD (HL), d8"), ld_addrhl_d8),
 	0x3D: build(label("DEC A"), dec_reg(A)),
 	0x3E: build(label("LD A, d8"), ld_reg_d8(A)),
 

@@ -34,6 +34,7 @@ type GPU struct {
 	objSize                bool
 	objEnable              bool
 	bgAndWinEnablePriority bool
+	oam                    []byte // obj attribute map
 
 	bgp  byte // bg palette
 	obp0 byte // obj palette 0
@@ -50,54 +51,58 @@ func (g *GPU) String() string {
 	return b.String()
 }
 
-func (g *GPU) WriteByte(addr uint16, b byte) {
+func (g *GPU) WriteByte(a uint16, b byte) {
 	switch {
-	case addr >= 0x8000 && addr <= 0x9FFF:
-		g.vram[addr-0x8000] = b
-	case addr == 0xFF40:
+	case a >= 0x8000 && a <= 0x9FFF:
+		g.vram[a-0x8000] = b
+	case a == 0xFF40:
 		// LCD Control
 		g.setControl(b)
-	case addr == 0xFF41:
+	case a == 0xFF41:
 		g.setStat(b & 0xF8)
-	case addr == 0xFF42:
+	case a == 0xFF42:
 		g.setScrollY(b)
-	case addr == 0xFF43:
+	case a == 0xFF43:
 		g.setScrollX(b)
-	case addr == 0xFF44:
+	case a == 0xFF44:
 		g.resetLY()
-	case addr == 0xFF47:
+	case a == 0xFF47:
 		g.bgp = b
-	case addr == 0xFF48:
+	case a == 0xFF48:
 		g.obp0 = b
-	case addr == 0xFF49:
+	case a == 0xFF49:
 		g.obp1 = b
+	case a >= 0xFE00 && a <= 0xFE9F:
+		g.oam[a-0xFE00] = b
 	default:
-		log.Panicf("unimplemented write gpu addr 0x%04X = 0x%02X\n", addr, b)
+		log.Panicf("unimplemented write gpu addr 0x%04X = 0x%02X\n", a, b)
 	}
 }
 
-func (g *GPU) ReadByte(addr uint16) byte {
+func (g *GPU) ReadByte(a uint16) byte {
 	switch {
-	case addr >= 0x8000 && addr <= 0x9FFF:
-		return g.vram[addr-0x8000]
-	case addr == 0xFF40:
+	case a >= 0x8000 && a <= 0x9FFF:
+		return g.vram[a-0x8000]
+	case a >= 0xFE00 && a <= 0xFE9F:
+		return g.oam[a-0xFE00]
+	case a == 0xFF40:
 		return g.getControl()
-	case addr == 0xFF41:
+	case a == 0xFF41:
 		return g.getStat()
-	case addr == 0xFF42:
+	case a == 0xFF42:
 		return g.getScrollY()
-	case addr == 0xFF43:
+	case a == 0xFF43:
 		return g.getScrollX()
-	case addr == 0xFF44:
+	case a == 0xFF44:
 		return g.getLY()
-	case addr == 0xFF47:
+	case a == 0xFF47:
 		return g.bgp
-	case addr == 0xFF48:
+	case a == 0xFF48:
 		return g.obp0
-	case addr == 0xFF49:
+	case a == 0xFF49:
 		return g.obp1
 	default:
-		log.Panicf("unimplemented read gpu addr 0x%04X\n", addr)
+		log.Panicf("unimplemented read gpu addr 0x%04X\n", a)
 	}
 	panic("unexpected gpu failure")
 }
@@ -127,10 +132,25 @@ func (g *GPU) getObjColor(idx byte) color.Color {
 	return g.getColor(idx)
 }
 
-func New() *GPU {
-	return &GPU{
-		vram: make([]byte, 8*1024),
+type Option func(g *GPU)
+
+func WithDebugger(enable bool) Option {
+	return func(g *GPU) {
+		g.showDebugger = enable
 	}
+}
+
+func New(opts ...Option) *GPU {
+	g := &GPU{
+		vram: make([]byte, 8*1024),
+		oam:  make([]byte, 40*4), // 40 sprites made of 4 bytes
+	}
+
+	for _, opt := range opts {
+		opt(g)
+	}
+
+	return g
 }
 
 func (g *GPU) setScrollX(x byte) {

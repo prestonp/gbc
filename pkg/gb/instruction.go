@@ -72,6 +72,11 @@ func ld_addrhl_reg(r Register) instruction {
 	}
 }
 
+func ld_addrhl_d8(c *CPU) {
+	addr := toWord(c.R[H], c.R[L])
+	c.MMU.WriteByte(addr, c.readByte())
+}
+
 func ld_sp_word(c *CPU) {
 	lsb := c.readByte()
 	msb := c.readByte()

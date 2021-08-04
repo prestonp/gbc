@@ -31,7 +31,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	gpu := gpu.New()
+	gpu := gpu.New(gpu.WithDebugger(*debug))
 	apu := apu.New()
 	mmu := gb.NewMMU(boot, rom, gpu, apu)
 	cpu := gb.NewCPU(mmu, gpu, *debug)
