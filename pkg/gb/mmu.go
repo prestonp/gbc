@@ -77,7 +77,7 @@ func (m *MMU) ReadByte(a uint16) byte {
 		return byte(m.IF)
 	case a >= 0xFF10 && a <= 0xFF26:
 		return m.apu.ReadByte(a)
-	case a >= 0xFF40 && a <= 0xFF47:
+	case a >= 0xFF40 && a <= 0xFF48:
 		return m.gpu.ReadByte(a)
 	case a >= 0xFF80 && a < 0xFFFF:
 		return m.hram[a-0xFF80]
@@ -112,7 +112,7 @@ func (m *MMU) WriteByte(a uint16, n uint8) {
 		m.IF = ByteFlag(n)
 	case a >= 0xFF10 && a <= 0xFF26:
 		m.apu.WriteByte(a, n)
-	case a >= 0xFF40 && a <= 0xFF47:
+	case a >= 0xFF40 && a <= 0xFF49:
 		m.gpu.WriteByte(a, n)
 	case a == 0xFF50:
 		m.booted = n != 0

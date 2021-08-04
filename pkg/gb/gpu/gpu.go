@@ -5,6 +5,7 @@ import (
 	"image"
 	"image/color"
 	"log"
+	"math/rand"
 	"strings"
 
 	"github.com/faiface/pixel"
@@ -34,7 +35,9 @@ type GPU struct {
 	objEnable              bool
 	bgAndWinEnablePriority bool
 
-	bgp byte
+	bgp  byte // bg palette
+	obp0 byte // obj palette 0
+	obp1 byte // obj palette 1
 }
 
 func (g *GPU) String() string {
@@ -64,6 +67,10 @@ func (g *GPU) WriteByte(addr uint16, b byte) {
 		g.resetLY()
 	case addr == 0xFF47:
 		g.bgp = b
+	case addr == 0xFF48:
+		g.obp0 = b
+	case addr == 0xFF49:
+		g.obp1 = b
 	default:
 		log.Panicf("unimplemented write gpu addr 0x%04X = 0x%02X\n", addr, b)
 	}
@@ -85,6 +92,10 @@ func (g *GPU) ReadByte(addr uint16) byte {
 		return g.getLY()
 	case addr == 0xFF47:
 		return g.bgp
+	case addr == 0xFF48:
+		return g.obp0
+	case addr == 0xFF49:
+		return g.obp1
 	default:
 		log.Panicf("unimplemented read gpu addr 0x%04X\n", addr)
 	}
@@ -107,6 +118,13 @@ func (g *GPU) getColor(idx byte) color.Color {
 		log.Panicf("unknown color %d", c)
 		return color.White
 	}
+}
+
+func (g *GPU) getObjColor(idx byte) color.Color {
+	if idx == 0 {
+		return color.Transparent
+	}
+	return g.getColor(idx)
 }
 
 func New() *GPU {
@@ -184,7 +202,11 @@ func (g *GPU) resetLY() {
 }
 
 func (g *GPU) getLY() byte {
-	return 0x90 // hack: 0x90 to unblock boot rom, 0x94 to unblock tetris, this is fixed when ly register is implemented
+	n := rand.Intn(2)
+	if n == 0 {
+		return 0x90
+	}
+	return 0x94 // hack: 0x90 to unblock boot rom, 0x94 to unblock tetris, this is fixed when ly register is implemented
 	// return g.ly
 }
 
