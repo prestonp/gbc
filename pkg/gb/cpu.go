@@ -258,6 +258,7 @@ var ops = map[byte]instruction{
 
 	0x77: build(label("LD (HL), A"), ld_addrhl_reg(A)),
 	0x78: build(label("LD A, B"), ld_reg_reg(A, B)),
+	0x79: build(label("LD A, C"), ld_reg_reg(A, C)),
 	0x7B: build(label("LD A, E"), ld_reg_reg(A, E)),
 	0x7C: build(label("LD A, H"), ld_reg_reg(A, H)),
 	0x7D: build(label("LD A, L"), ld_reg_reg(A, L)),
@@ -266,9 +267,12 @@ var ops = map[byte]instruction{
 
 	0x90: build(label("SUB B"), sub(B)),
 
+	0xA1: build(label("AND C"), and_reg(C)),
 	0xA7: build(label("AND A"), and_reg(A)),
+	0xA9: build(label("XOR C"), xor_reg(C)),
 	0xAF: build(label("XOR A"), xor_reg(A)),
 
+	0xB0: build(label("OR B"), or_reg(B)),
 	0xB1: build(label("OR C"), or_reg(C)),
 	0xBE: build(label("CP (HL)"), cp_hl),
 
