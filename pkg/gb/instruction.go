@@ -483,3 +483,15 @@ func swap_reg(r Register) instruction {
 		}
 	}
 }
+
+func rst(offset byte) instruction {
+	return func(c *CPU) {
+		addr := uint16(offset)
+		c.Debugf("exec rst 0x%02X: push PC 0x%04X onto stack, jumping to 0x%04X\n", offset, c.PC, addr)
+		lsb := byte(c.PC & 0xFF)
+		msb := byte(c.PC >> 8)
+		c.stackPush(lsb)
+		c.stackPush(msb)
+		c.PC = addr
+	}
+}

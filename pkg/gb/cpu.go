@@ -286,6 +286,7 @@ var ops = map[byte]instruction{
 	0xE2: build(label("LD (C), A"), ld_offset_addr(C, A)),
 	0xE6: build(label("AND d8"), and_d8),
 	0xEA: build(label("LD (a16), A"), ld_a16_reg(A)),
+	0xEF: build(label("RST 0x28"), rst(0x28)),
 
 	0xF0: build(label("LDH A, (a8)"), ldh_reg_a8(A)),
 	0xF3: build(label("DI"), di),

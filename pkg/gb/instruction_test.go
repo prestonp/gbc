@@ -190,3 +190,18 @@ func TestSwap(t *testing.T) {
 		require.EqualValues(t, FlagZero, cpu.R[F])
 	}
 }
+
+func TestRst(t *testing.T) {
+	mmu := NewMMU(nil, nil, nil, nil)
+	cpu := NewCPU(mmu, gpu.New(), false)
+	rst_28 := rst(0x28)
+
+	cpu.SP = 0xFFFE
+	cpu.PC = 0x0123
+
+	rst_28(cpu)
+	require.EqualValues(t, 0x0028, cpu.PC)
+
+	ret(cpu)
+	require.EqualValues(t, 0x0123, cpu.PC, "should've returned after popping stack")
+}
