@@ -459,3 +459,8 @@ func or_reg(r Register) instruction {
 		}
 	}
 }
+
+func cpl(c *CPU) {
+	c.R[A] = ^c.R[A]
+	c.R[F] = 0x06
+}

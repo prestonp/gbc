@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/prestonp/gbc/pkg/gb"
+	"github.com/prestonp/gbc/pkg/shared"
 )
 
 type APU struct {
@@ -98,7 +98,7 @@ func (a *APU) ReadByte(addr uint16) byte {
 	return 0
 }
 
-func (a *APU) Run(debugger gb.Debugger) {
+func (a *APU) Run(debugger shared.Debugger) {
 	log.Panicf("apu.Run not implemented, check if this requires handling timing")
 }
 

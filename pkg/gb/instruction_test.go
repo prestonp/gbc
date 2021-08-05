@@ -151,3 +151,19 @@ func TestAdd(t *testing.T) {
 		require.EqualValues(t, FlagCarry, cpu.R[F]&FlagCarry)
 	}
 }
+
+func TestCpl(t *testing.T) {
+	cpu := NewCPU(nil, gpu.New(), false)
+	{
+		cpu.R[A] = 0x0F
+		cpl(cpu)
+		require.EqualValues(t, 0xF0, cpu.R[A])
+		require.EqualValues(t, 0x06, cpu.R[F])
+	}
+	{
+		cpu.R[A] = 0xAA
+		cpl(cpu)
+		require.EqualValues(t, 0x55, cpu.R[A])
+		require.EqualValues(t, 0x06, cpu.R[F])
+	}
+}

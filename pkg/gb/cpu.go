@@ -8,11 +8,8 @@ import (
 	"time"
 
 	"github.com/prestonp/gbc/pkg/logbuf"
+	"github.com/prestonp/gbc/pkg/shared"
 )
-
-type Debugger interface {
-	String() string
-}
 
 type Register uint8
 
@@ -242,6 +239,7 @@ var ops = map[byte]instruction{
 	0x28: build(label("JR Z, r8"), jr_z_r8),
 	0x2A: build(label("LDI A, (HL)"), ldi_reg_word(A, H, L)),
 	0x2E: build(label("LD L, d8"), ld_reg_d8(L)),
+	0x2F: build(label("CPL"), cpl),
 
 	0x31: build(label("LD SP, d16"), ld_sp_word),
 	0x32: build(label("LD (HL-), A"), ldd_hl_reg(A)),
@@ -330,7 +328,7 @@ func toWord(a, b uint8) uint16 {
 type Module interface {
 	ReadByte(addr uint16) byte
 	WriteByte(addr uint16, b byte)
-	Run(debugger Debugger)
+	Run(debugger shared.Debugger)
 }
 
 func (c *CPU) stackPush(b byte) {

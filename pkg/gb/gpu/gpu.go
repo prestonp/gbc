@@ -11,7 +11,7 @@ import (
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/pixelgl"
 	"github.com/faiface/pixel/text"
-	"github.com/prestonp/gbc/pkg/gb"
+	"github.com/prestonp/gbc/pkg/shared"
 	"golang.org/x/image/font/basicfont"
 )
 
@@ -240,7 +240,7 @@ func (g *GPU) getLY() byte {
 	// return g.ly
 }
 
-func (g *GPU) Run(debugger gb.Debugger) {
+func (g *GPU) Run(debugger shared.Debugger) {
 	cfg := pixelgl.WindowConfig{
 		Title:  "gameboy",
 		Bounds: pixel.R(0, 0, 1024, 768),
@@ -265,7 +265,7 @@ func (g *GPU) handleInput(win *pixelgl.Window) {
 	}
 }
 
-func (g *GPU) render(win *pixelgl.Window, debugger gb.Debugger) {
+func (g *GPU) render(win *pixelgl.Window, debugger shared.Debugger) {
 	win.Clear(color.Black)
 	g.renderBackground(win)
 	g.renderWindow(win)
@@ -273,7 +273,7 @@ func (g *GPU) render(win *pixelgl.Window, debugger gb.Debugger) {
 	g.renderDebugger(win, debugger)
 }
 
-func (g *GPU) renderDebugger(win *pixelgl.Window, debugger gb.Debugger) {
+func (g *GPU) renderDebugger(win *pixelgl.Window, debugger shared.Debugger) {
 	if !g.showDebugger {
 		return
 	}
