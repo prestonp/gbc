@@ -207,6 +207,7 @@ func label(s string) instruction {
 
 var extendedOps = map[byte]instruction{
 	0x11: build(label("RL C"), rl_reg(C)),
+	0x37: build(label("SWAP A"), swap_reg(A)),
 	0x7C: bit(7, H),
 }
 

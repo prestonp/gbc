@@ -167,3 +167,26 @@ func TestCpl(t *testing.T) {
 		require.EqualValues(t, 0x06, cpu.R[F])
 	}
 }
+
+func TestSwap(t *testing.T) {
+	cpu := NewCPU(nil, gpu.New(), false)
+	swapA := swap_reg(A)
+	{
+		cpu.R[A] = 0x5F
+		swapA(cpu)
+		require.EqualValues(t, 0xF5, cpu.R[A])
+		require.EqualValues(t, 0, cpu.R[F])
+	}
+	{
+		cpu.R[A] = 0xF5
+		swapA(cpu)
+		require.EqualValues(t, 0x5F, cpu.R[A])
+		require.EqualValues(t, 0, cpu.R[F])
+	}
+	{
+		cpu.R[A] = 0x00
+		swapA(cpu)
+		require.EqualValues(t, 0x00, cpu.R[A])
+		require.EqualValues(t, FlagZero, cpu.R[F])
+	}
+}

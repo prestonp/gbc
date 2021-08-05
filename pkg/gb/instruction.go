@@ -472,3 +472,14 @@ func cpl(c *CPU) {
 	c.R[A] = ^c.R[A]
 	c.R[F] = 0x06
 }
+
+func swap_reg(r Register) instruction {
+	return func(c *CPU) {
+		c.R[r] = (c.R[r] & 0x0F << 4) | (c.R[r] & 0xF0 >> 4)
+		if c.R[r] == 0 {
+			c.R[F] = FlagZero
+		} else {
+			c.R[F] = 0
+		}
+	}
+}
