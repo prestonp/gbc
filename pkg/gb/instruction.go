@@ -281,16 +281,24 @@ func jr_r8(c *CPU) {
 	c.Debugf("exec jr r8 -- jumping to 0x%04X\n", c.PC)
 }
 
+func _and(c *CPU, b byte) {
+	c.R[A] = b & c.R[A]
+	c.R[F] = 0
+	if c.R[A] == 0 {
+		c.R[F] |= FlagZero
+	}
+	c.R[F] |= FlagHalfCarry
+	c.Debugf("exec AND 0x%02X flags = 0b%04b\n", b, c.R[F]>>4)
+}
+
 func and_reg(r Register) instruction {
 	return func(c *CPU) {
-		c.R[A] = c.R[r] & c.R[A]
-		c.R[F] = 0
-		if c.R[A] == 0 {
-			c.R[F] |= FlagZero
-		}
-		c.R[F] |= FlagHalfCarry
-		c.Debugf("exec and %s flags = 0b%04b\n", r, c.R[F]>>4)
+		_and(c, c.R[r])
 	}
+}
+
+func and_d8(c *CPU) {
+	_and(c, c.readByte())
 }
 
 func xor_reg(r Register) instruction {
