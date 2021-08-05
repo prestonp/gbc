@@ -19,10 +19,16 @@ func noop(c *CPU) {
 	c.Debugf("noop\n")
 }
 
-func jmp_a16(c *CPU) {
+func jp_a16(c *CPU) {
 	lsb := c.readByte()
 	msb := c.readByte()
 	addr := toWord(msb, lsb)
+	c.PC = addr
+	c.Debugf("exec jumped to 0x%04X\n", addr)
+}
+
+func jp_hl(c *CPU) {
+	addr := toWord(c.R[H], c.R[L])
 	c.PC = addr
 	c.Debugf("exec jumped to 0x%04X\n", addr)
 }
