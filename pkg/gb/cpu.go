@@ -123,7 +123,8 @@ func (c *CPU) String() string {
 	fmt.Fprintf(&b, "IME:\t%v\n", c.IME)
 	fmt.Fprintf(&b, "IE:\n%s", c.MMU.IE)
 	fmt.Fprintf(&b, "IF:\n%s", c.MMU.IF)
-	fmt.Fprintf(&b, "PPU:\n%s\n", c.MMU.gpu)
+	fmt.Fprintf(&b, "PPU:\n%s", c.MMU.gpu)
+	fmt.Fprintf(&b, "JOYP:\t%08b\n", c.MMU.joyp)
 	return b.String()
 }
 
@@ -284,6 +285,7 @@ var ops = map[byte]instruction{
 
 	0xF0: build(label("LDH A, (a8)"), ldh_reg_a8(A)),
 	0xF3: build(label("DI"), di),
+	0xFB: build(label("EI"), ei),
 	0xFE: build(label("CP d8"), cp_byte),
 }
 

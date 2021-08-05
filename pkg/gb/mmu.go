@@ -30,9 +30,10 @@ type MMU struct {
 	SB     byte
 	SC     byte
 	BGP    byte // background and window palette
-
-	gpu Module
-	apu Module
+	tma    byte // timer modulo
+	gpu    Module
+	apu    Module
+	joyp   byte
 }
 
 func NewMMU(bootRom, cartRom []uint8, gpu, apu Module) *MMU {
@@ -67,21 +68,34 @@ func (m *MMU) ReadByte(a uint16) byte {
 		// echo ram
 		return m.wram[a-0xE000]
 	case a >= 0xFE00 && a <= 0xFE9F:
-		m.gpu.ReadByte(a)
+		return m.gpu.ReadByte(a)
 	case a >= 0xFEA0 && a <= 0xFEFF:
 		return 0x00
+	case a == 0xFF00:
+		if m.joyp&0x10 == 0x10 {
+			// todo: read direction buttons
+			btns := 0x0
+			return m.joyp&0xF0 | byte(btns)
+		} else if m.joyp&0x20 == 0x20 {
+			// todo: read action buttons
+			btns := 0x0
+			return m.joyp&0xF0 | byte(btns)
+		}
+		return m.joyp & 0xF0
 	case a == 0xFF01:
 		// SB - serial transfer data
 		return m.SB
 	case a == 0xFF02:
 		// SC - serial transfer control
 		return m.SC
+	case a == 0xFF06:
+		return m.tma
 	case a == 0xFF0F:
 		// IF Interrupt flag
 		return byte(m.IF)
 	case a >= 0xFF10 && a <= 0xFF26:
 		return m.apu.ReadByte(a)
-	case a >= 0xFF40 && a <= 0xFF48:
+	case a >= 0xFF40 && a <= 0xFF4B:
 		return m.gpu.ReadByte(a)
 	case a >= 0xFF80 && a < 0xFFFF:
 		return m.hram[a-0xFF80]
@@ -108,6 +122,8 @@ func (m *MMU) WriteByte(a uint16, n uint8) {
 	case a >= 0xE000 && a <= 0xFE00:
 		// echo of working ram
 		m.wram[a-0xE000] = n
+	case a == 0xFF00:
+		m.joyp = n & 0x30
 	case a == 0xFF01:
 		// SB - serial transfer data
 		m.SB = n
@@ -115,12 +131,14 @@ func (m *MMU) WriteByte(a uint16, n uint8) {
 		// SC - serial transfer control
 		// todo: not implemented
 		m.SC = n
+	case a == 0xFF06:
+		m.tma = n
 	case a == 0xFF0F:
 		// IF - Interrupt Flag
 		m.IF = ByteFlag(n)
 	case a >= 0xFF10 && a <= 0xFF26:
 		m.apu.WriteByte(a, n)
-	case a >= 0xFF40 && a <= 0xFF49:
+	case a >= 0xFF40 && a <= 0xFF4B:
 		m.gpu.WriteByte(a, n)
 	case a == 0xFF50:
 		m.booted = n != 0

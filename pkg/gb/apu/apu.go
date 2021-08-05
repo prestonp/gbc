@@ -14,6 +14,7 @@ type APU struct {
 	nr22 byte // channel 2 volume envelope
 	nr23 byte // channel 2 frequency lo data
 	nr24 byte // channel 2 frequency hi data
+	nr30 byte // channel 3 sound on/off
 	nr42 byte // channel 4 volume envelope
 	nr44 byte // channel 4 counter/consecutive; initial
 	nr50 byte // unimplemented
@@ -43,6 +44,8 @@ func (a *APU) WriteByte(addr uint16, b byte) {
 		a.nr23 = b
 	case addr == 0xFF19:
 		a.nr24 = b
+	case addr == 0xFF1A:
+		a.nr30 = b
 	case addr == 0xFF21:
 		a.nr42 = b
 	case addr == 0xFF23:
@@ -76,6 +79,8 @@ func (a *APU) ReadByte(addr uint16) byte {
 		return a.nr23
 	case addr == 0xFF19:
 		return a.nr24
+	case addr == 0xFF1A:
+		return a.nr30
 	case addr == 0xFF21:
 		return a.nr42
 	case addr == 0xFF23:

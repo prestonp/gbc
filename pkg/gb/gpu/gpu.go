@@ -21,6 +21,8 @@ type GPU struct {
 	vram []byte
 	scx  byte
 	scy  byte
+	wy   byte // window y position
+	wx   byte // window x position
 	stat byte
 
 	ly byte // lcdc y-coordinate
@@ -72,6 +74,10 @@ func (g *GPU) WriteByte(a uint16, b byte) {
 		g.obp0 = b
 	case a == 0xFF49:
 		g.obp1 = b
+	case a == 0xFF4A:
+		g.wy = b
+	case a == 0xFF4B:
+		g.wx = b
 	case a >= 0xFE00 && a <= 0xFE9F:
 		g.oam[a-0xFE00] = b
 	default:
@@ -101,6 +107,10 @@ func (g *GPU) ReadByte(a uint16) byte {
 		return g.obp0
 	case a == 0xFF49:
 		return g.obp1
+	case a == 0xFF4A:
+		return g.wy
+	case a == 0xFF4B:
+		return g.wx
 	default:
 		log.Panicf("unimplemented read gpu addr 0x%04X\n", a)
 	}
