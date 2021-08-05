@@ -205,3 +205,81 @@ func TestRst(t *testing.T) {
 	ret(cpu)
 	require.EqualValues(t, 0x0123, cpu.PC, "should've returned after popping stack")
 }
+
+func TestAddHLWord(t *testing.T) {
+	cpu := NewCPU(nil, nil, false)
+
+	addBC := add_hl_word(B, C)
+
+	t.Run("simple add", func(t *testing.T) {
+		cpu.R[H] = 0x55
+		cpu.R[L] = 0x55
+		cpu.R[B] = 0x22
+		cpu.R[C] = 0x22
+
+		addBC(cpu)
+
+		require.EqualValues(t, 0x77, cpu.R[H])
+		require.EqualValues(t, 0x77, cpu.R[L])
+		require.EqualValues(t, 0, cpu.R[F]&FlagSubtract)
+		require.EqualValues(t, 0, cpu.R[F]&FlagHalfCarry)
+		require.EqualValues(t, 0, cpu.R[F]&FlagCarry)
+	})
+	t.Run("no carries", func(t *testing.T) {
+		cpu.R[H] = 0xFF
+		cpu.R[L] = 0xFF
+		cpu.R[B] = 0x00
+		cpu.R[C] = 0x00
+
+		addBC(cpu)
+
+		require.EqualValues(t, 0xFF, cpu.R[H])
+		require.EqualValues(t, 0xFF, cpu.R[L])
+		require.EqualValues(t, 0, cpu.R[F]&FlagSubtract)
+		require.EqualValues(t, 0, cpu.R[F]&FlagHalfCarry)
+		require.EqualValues(t, 0, cpu.R[F]&FlagCarry)
+	})
+	t.Run("zero", func(t *testing.T) {
+		cpu.R[H] = 0x00
+		cpu.R[L] = 0x00
+		cpu.R[B] = 0x00
+		cpu.R[C] = 0x00
+
+		addBC(cpu)
+
+		require.EqualValues(t, 0x00, cpu.R[H])
+		require.EqualValues(t, 0x00, cpu.R[L])
+		require.EqualValues(t, 0, cpu.R[F]&FlagSubtract)
+		require.EqualValues(t, 0, cpu.R[F]&FlagHalfCarry)
+		require.EqualValues(t, 0, cpu.R[F]&FlagCarry)
+	})
+	t.Run("half carry", func(t *testing.T) {
+		cpu.R[H] = 0x08
+		cpu.R[L] = 0x00
+		cpu.R[B] = 0x08
+		cpu.R[C] = 0x00
+
+		addBC(cpu)
+
+		require.EqualValues(t, 0x10, cpu.R[H])
+		require.EqualValues(t, 0x00, cpu.R[L])
+		require.EqualValues(t, 0, cpu.R[F]&FlagSubtract)
+		require.EqualValues(t, FlagHalfCarry, cpu.R[F]&FlagHalfCarry)
+		require.EqualValues(t, 0, cpu.R[F]&FlagCarry)
+	})
+
+	t.Run("full carry", func(t *testing.T) {
+		cpu.R[H] = 0x80
+		cpu.R[L] = 0x00
+		cpu.R[B] = 0x80
+		cpu.R[C] = 0x00
+
+		addBC(cpu)
+
+		require.EqualValues(t, 0x00, cpu.R[H])
+		require.EqualValues(t, 0x00, cpu.R[L])
+		require.EqualValues(t, 0, cpu.R[F]&FlagSubtract)
+		require.EqualValues(t, 0, cpu.R[F]&FlagHalfCarry)
+		require.EqualValues(t, FlagCarry, cpu.R[F]&FlagCarry)
+	})
+}

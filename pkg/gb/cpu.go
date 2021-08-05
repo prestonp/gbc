@@ -228,6 +228,7 @@ var ops = map[byte]instruction{
 	0x16: build(label("LD D, d8"), ld_reg_d8(D)),
 	0x17: build(label("RLA"), rl_reg(A)),
 	0x18: build(label("JR r8"), jr_r8),
+	0x19: build(label("ADD HL, DE"), add_hl_word(D, E)),
 	0x1A: build(label("LD A, (DE)"), ld_reg_word(A, D, E)),
 	0x1D: build(label("DEC E"), dec_reg(E)),
 	0x1E: build(label("LD E, d8"), ld_reg_d8(E)),
@@ -252,6 +253,7 @@ var ops = map[byte]instruction{
 	0x4F: build(label("LD C, A"), ld_reg_reg(C, A)),
 
 	0x57: build(label("LD D, A"), ld_reg_reg(D, A)),
+	0x5F: build(label("LD E, A"), ld_reg_reg(E, A)),
 
 	0x61: build(label("LD H, C"), ld_reg_reg(H, C)),
 	0x67: build(label("LD H, A"), ld_reg_reg(H, A)),
@@ -264,6 +266,7 @@ var ops = map[byte]instruction{
 	0x7D: build(label("LD A, L"), ld_reg_reg(A, L)),
 
 	0x86: build(label("ADD A, (HL)"), add_hl),
+	0x87: build(label("ADD A, A"), add_reg(A)),
 
 	0x90: build(label("SUB B"), sub(B)),
 
@@ -283,6 +286,7 @@ var ops = map[byte]instruction{
 	0xC3: build(label("JMP a16"), jmp_a16),
 
 	0xE0: build(label("LDH (a8), A"), ldh_a8_reg(A)),
+	0xE1: build(label("POP HL"), pop(H, L)),
 	0xE2: build(label("LD (C), A"), ld_offset_addr(C, A)),
 	0xE6: build(label("AND d8"), and_d8),
 	0xEA: build(label("LD (a16), A"), ld_a16_reg(A)),

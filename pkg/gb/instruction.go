@@ -457,6 +457,25 @@ func add_d8(c *CPU) {
 	_add(c, c.readByte())
 }
 
+func add_hl_word(upper, lower Register) instruction {
+	return func(c *CPU) {
+		a := toWord(c.R[H], c.R[L])
+		b := toWord(c.R[upper], c.R[lower])
+		sum := a + b
+
+		c.R[H] = byte(sum >> 8)
+		c.R[L] = byte(sum & 0xFF)
+
+		c.R[F] = c.R[F] & FlagZero
+		if (a&0xFFF+b&0xFFF)&0x1000 == 0x1000 {
+			c.R[F] |= FlagHalfCarry
+		}
+		if (uint32(a)+uint32(b))&0x10000 == 0x10000 {
+			c.R[F] |= FlagCarry
+		}
+	}
+}
+
 func or_reg(r Register) instruction {
 	return func(c *CPU) {
 		c.R[A] |= c.R[r]
